@@ -58,7 +58,11 @@ func main() {
 	authMiddleware := middleware.JWTAuth(cfg.JWTSecret, userRepo)
 	authMiddlewareUserOnly := middleware.JWTAuthUserOnly(cfg.JWTSecret)
 	adminMiddleware := middleware.AdminOnly(userRepo)
-	rateLimiter := middleware.NewRateLimiter(cfg.RateLimitEnabled)
+	rateLimiter := middleware.NewRateLimiter(
+		cfg.RateLimitEnabled,
+		redisClient,
+		middleware.ParseTrustedProxies(cfg.TrustedProxies),
+	)
 
 	mux := http.NewServeMux()
 
