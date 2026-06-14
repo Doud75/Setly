@@ -10,6 +10,7 @@ type Config struct {
 	JWTSecret        string
 	RateLimitEnabled bool
 	RedisURL         string
+	TrustedProxies   string
 }
 
 func Load() Config {
@@ -28,10 +29,16 @@ func Load() Config {
 		rateLimitEnabled = false
 	}
 
+	trustedProxies := os.Getenv("TRUSTED_PROXIES")
+	if trustedProxies == "" {
+		trustedProxies = "127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+	}
+
 	return Config{
 		DatabaseURL:      dbURL,
 		JWTSecret:        jwtSecret,
 		RateLimitEnabled: rateLimitEnabled,
 		RedisURL:         os.Getenv("REDIS_URL"),
+		TrustedProxies:   trustedProxies,
 	}
 }
