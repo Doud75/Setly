@@ -2,6 +2,8 @@
 /// <reference lib="esnext" />
 /// <reference lib="webworker" />
 
+import { cachePut } from './lib/sw/cacheUtils';
+
 declare const self: ServiceWorkerGlobalScope;
 
 declare global {
@@ -132,7 +134,7 @@ async function networkFirstNavigation(request: Request): Promise<Response> {
 	try {
 		const response = await fetch(request);
 		if (response.ok) {
-			await cache.put(request, cleanResponse(response.clone()));
+			await cachePut(PAGES_CACHE, request, cleanResponse(response.clone()), 20);
 		}
 		return response;
 	} catch {
@@ -148,7 +150,7 @@ async function networkFirstData(request: Request): Promise<Response> {
 	try {
 		const response = await fetch(request);
 		if (response.ok) {
-			await cache.put(request, response.clone());
+			await cachePut(PAGES_CACHE, request, response.clone(), 20);
 		}
 		return response;
 	} catch {
@@ -168,7 +170,7 @@ async function networkFirstApi(request: Request): Promise<Response> {
 	try {
 		const response = await fetch(request);
 		if (response.ok) {
-			await cache.put(request, response.clone());
+			await cachePut(API_CACHE, request, response.clone(), 50, 7 * 24 * 60 * 60);
 		}
 		return response;
 	} catch {
