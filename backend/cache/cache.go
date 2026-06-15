@@ -11,13 +11,13 @@ import (
 
 func NewClient(redisURL string) *redis.Client {
 	if redisURL == "" {
-		log.Println("[cache] REDIS_URL non définie — cache Redis désactivé (mode fail-safe).")
+		log.Println("[cache] REDIS_URL not set — Redis cache disabled (fail-safe mode).")
 		return nil
 	}
 
 	opts, err := redis.ParseURL(redisURL)
 	if err != nil {
-		log.Printf("[cache] URL Redis invalide (%s) — cache désactivé : %v\n", redisURL, err)
+		log.Printf("[cache] invalid Redis URL (%s) — cache disabled: %v\n", redisURL, err)
 		return nil
 	}
 
@@ -26,12 +26,12 @@ func NewClient(redisURL string) *redis.Client {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	if err := client.Ping(ctx).Err(); err != nil {
-		log.Printf("[cache] Impossible de joindre Redis — cache désactivé : %v\n", err)
+		log.Printf("[cache] cannot reach Redis — cache disabled: %v\n", err)
 		client.Close()
 		return nil
 	}
 
-	log.Println("[cache] Connexion Redis établie ✓")
+	log.Println("[cache] Redis connection established ✓")
 	return client
 }
 
@@ -45,6 +45,14 @@ func ProfileKey(userID int, bandID int) string {
 
 func SetlistKey(bandID int) string {
 	return fmt.Sprintf("band:%d:setlists", bandID)
+}
+
+// SetlistDetailKey is the cache key for a single setlist's full details
+// (setlist + its items). GetDetails is not cached yet; this key and the
+// invalidations in AddItem/UpdateItem/DeleteItem/UpdateOrder are prepared so
+// caching GetDetails later requires no extra wiring.
+func SetlistDetailKey(setlistID int) string {
+	return fmt.Sprintf("setlist:%d:details", setlistID)
 }
 
 func Get(ctx context.Context, client *redis.Client, key string) (string, bool) {
@@ -63,7 +71,7 @@ func Set(ctx context.Context, client *redis.Client, key string, value string, tt
 		return
 	}
 	if err := client.Set(ctx, key, value, ttl).Err(); err != nil {
-		log.Printf("[cache] Erreur lors de l'écriture de la clé %s : %v\n", key, err)
+		log.Printf("[cache] error writing key %s: %v\n", key, err)
 	}
 }
 
@@ -72,6 +80,6 @@ func Delete(ctx context.Context, client *redis.Client, key string) {
 		return
 	}
 	if err := client.Del(ctx, key).Err(); err != nil {
-		log.Printf("[cache] Erreur lors de la suppression de la clé %s : %v\n", key, err)
+		log.Printf("[cache] error deleting key %s: %v\n", key, err)
 	}
 }

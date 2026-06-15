@@ -281,13 +281,6 @@ func (s UserService) LeaveBand(ctx context.Context, userID int, bandID int) erro
 	return nil
 }
 
-func (s UserService) SearchUsers(ctx context.Context, query string) ([]model.User, error) {
-	if len(query) < 3 {
-		return []model.User{}, nil
-	}
-	return s.UserRepo.SearchUsersByUsername(ctx, query)
-}
-
 func (s UserService) CreateBand(ctx context.Context, name string, ownerUserID int) (model.Band, error) {
 	if name == "" {
 		return model.Band{}, ErrBandNameRequired

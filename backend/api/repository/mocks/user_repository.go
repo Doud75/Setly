@@ -250,21 +250,6 @@ func (mr *MockUserRepositoryMockRecorder) RemoveUserFromBand(ctx, bandID, userID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveUserFromBand", reflect.TypeOf((*MockUserRepository)(nil).RemoveUserFromBand), ctx, bandID, userID)
 }
 
-// SearchUsersByUsername mocks base method.
-func (m *MockUserRepository) SearchUsersByUsername(ctx context.Context, usernameQuery string) ([]model.User, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchUsersByUsername", ctx, usernameQuery)
-	ret0, _ := ret[0].([]model.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SearchUsersByUsername indicates an expected call of SearchUsersByUsername.
-func (mr *MockUserRepositoryMockRecorder) SearchUsersByUsername(ctx, usernameQuery any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchUsersByUsername", reflect.TypeOf((*MockUserRepository)(nil).SearchUsersByUsername), ctx, usernameQuery)
-}
-
 // SetDefaultBand mocks base method.
 func (m *MockUserRepository) SetDefaultBand(ctx context.Context, userID, bandID int) error {
 	m.ctrl.T.Helper()

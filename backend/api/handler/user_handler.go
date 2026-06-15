@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 	"setlist/api/apierror"
-	"setlist/api/model"
 	"setlist/api/repository"
 	"setlist/api/service"
 )
@@ -86,20 +85,5 @@ func (h UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) erro
 	}
 
 	RespondOK(w, map[string]string{"message": "Mot de passe mis à jour avec succès."})
-	return nil
-}
-
-func (h UserHandler) SearchUsers(w http.ResponseWriter, r *http.Request) error {
-	query := r.URL.Query().Get("q")
-
-	users, err := h.UserService.SearchUsers(r.Context(), query)
-	if err != nil {
-		return apierror.InternalError("recherche d'utilisateurs")
-	}
-	if users == nil {
-		users = make([]model.User, 0)
-	}
-
-	RespondOK(w, users)
 	return nil
 }

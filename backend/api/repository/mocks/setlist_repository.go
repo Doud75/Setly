@@ -217,11 +217,12 @@ func (mr *MockSetlistRepositoryMockRecorder) DeleteSetlist(ctx, setlistID, bandI
 }
 
 // DeleteSetlistItem mocks base method.
-func (m *MockSetlistRepository) DeleteSetlistItem(ctx context.Context, itemID, bandID int) error {
+func (m *MockSetlistRepository) DeleteSetlistItem(ctx context.Context, itemID, bandID int) (int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteSetlistItem", ctx, itemID, bandID)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // DeleteSetlistItem indicates an expected call of DeleteSetlistItem.

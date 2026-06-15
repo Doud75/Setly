@@ -61,7 +61,7 @@ func ParseTrustedProxies(raw string) []*net.IPNet {
 		if _, n, err := net.ParseCIDR(part); err == nil {
 			nets = append(nets, n)
 		} else {
-			log.Printf("[ratelimit] entrée TRUSTED_PROXIES ignorée (invalide) : %q", part)
+			log.Printf("[ratelimit] ignored TRUSTED_PROXIES entry (invalid): %q", part)
 		}
 	}
 	return nets
@@ -126,7 +126,6 @@ func writeTooMany(w http.ResponseWriter, retryAfterSeconds int, msg string) {
 // LimitMiddleware applique la limitation de débit et la protection brute-force.
 func (rl *RateLimiter) LimitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// fail-open : désactivé ou Redis indisponible → on laisse passer.
 		if !rl.enabled || rl.client == nil {
 			next.ServeHTTP(w, r)
 			return

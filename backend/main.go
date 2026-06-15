@@ -72,7 +72,6 @@ func main() {
 	mux.Handle("/api/auth/logout", handler.Wrap(authHandler.Logout))
 	mux.Handle("PUT /api/user/password", authMiddlewareUserOnly(handler.Wrap(userHandler.UpdatePassword)))
 	mux.Handle("GET /api/user/info", authMiddlewareUserOnly(handler.Wrap(infoHandler.GetCurrentUserInfo)))
-	mux.Handle("GET /api/user/search", authMiddlewareUserOnly(handler.Wrap(userHandler.SearchUsers)))
 	mux.Handle("GET /api/user/bands", authMiddlewareUserOnly(handler.Wrap(bandHandler.GetUserBands)))
 	mux.Handle("PUT /api/user/default-band", authMiddlewareUserOnly(handler.Wrap(bandHandler.SetDefaultBand)))
 

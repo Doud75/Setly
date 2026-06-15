@@ -150,6 +150,10 @@ func (s SetlistService) GetAllForBand(ctx context.Context, bandID int) ([]model.
 	return setlists, nil
 }
 
+// GetDetails returns a setlist with its items. It is NOT cached yet. When
+// caching is added, store the result under cache.SetlistDetailKey(id); the
+// item mutations (AddItem, UpdateItem, DeleteItem, UpdateOrder) already
+// invalidate that key, so no extra wiring is required.
 func (s SetlistService) GetDetails(ctx context.Context, id int, bandID int) (SetlistDetails, error) {
 	setlist, err := s.SetlistRepo.GetSetlistByID(ctx, id, bandID)
 	if err != nil {
@@ -194,7 +198,12 @@ func (s SetlistService) AddItem(ctx context.Context, setlistID int, bandID int, 
 	} else {
 		return model.SetlistItem{}, ErrInvalidItemType
 	}
-	return s.SetlistRepo.AddItemToSetlist(ctx, item)
+	created, err := s.SetlistRepo.AddItemToSetlist(ctx, item)
+	if err != nil {
+		return model.SetlistItem{}, err
+	}
+	cache.Delete(ctx, s.Cache, cache.SetlistDetailKey(setlistID))
+	return created, nil
 }
 
 func (s SetlistService) UpdateOrder(ctx context.Context, setlistID int, bandID int, payload UpdateOrderPayload) error {
@@ -204,7 +213,11 @@ func (s SetlistService) UpdateOrder(ctx context.Context, setlistID int, bandID i
 	if len(payload.ItemIDs) == 0 {
 		return nil
 	}
-	return s.SetlistRepo.UpdateItemOrder(ctx, setlistID, payload.ItemIDs)
+	if err := s.SetlistRepo.UpdateItemOrder(ctx, setlistID, payload.ItemIDs); err != nil {
+		return err
+	}
+	cache.Delete(ctx, s.Cache, cache.SetlistDetailKey(setlistID))
+	return nil
 }
 
 func (s SetlistService) UpdateItem(ctx context.Context, itemID int, bandID int, payload UpdateItemPayload) (model.SetlistItem, error) {
@@ -216,13 +229,16 @@ func (s SetlistService) UpdateItem(ctx context.Context, itemID int, bandID int, 
 	if err != nil {
 		return model.SetlistItem{}, mapNotFound(err, ErrItemNotFound)
 	}
+	cache.Delete(ctx, s.Cache, cache.SetlistDetailKey(item.SetlistID))
 	return item, nil
 }
 
 func (s SetlistService) DeleteItem(ctx context.Context, itemID int, bandID int) error {
-	if err := s.SetlistRepo.DeleteSetlistItem(ctx, itemID, bandID); err != nil {
+	setlistID, err := s.SetlistRepo.DeleteSetlistItem(ctx, itemID, bandID)
+	if err != nil {
 		return mapNotFound(err, ErrItemNotFound)
 	}
+	cache.Delete(ctx, s.Cache, cache.SetlistDetailKey(setlistID))
 	return nil
 }
 
