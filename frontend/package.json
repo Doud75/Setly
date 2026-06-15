@@ -50,5 +50,8 @@
 		"jspdf": "^4.2.0",
 		"jwt-decode": "^4.0.0",
 		"svelte-dnd-action": "^0.9.65"
+	},
+	"overrides": {
+		"@exodus/bytes": ">=1.6.0 <1.12.0"
 	}
 }
