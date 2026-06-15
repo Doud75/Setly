@@ -1,11 +1,11 @@
 module setlist
 
-go 1.25.0
+go 1.25.11
 
 require (
 	github.com/alicebob/miniredis/v2 v2.38.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
-	github.com/jackc/pgx/v5 v5.7.6
+	github.com/jackc/pgx/v5 v5.9.0
 	github.com/redis/go-redis/v9 v9.18.0
 	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.42.0

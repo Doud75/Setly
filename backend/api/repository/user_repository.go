@@ -31,7 +31,6 @@ type UserRepository interface {
 	GetAdminCountInBand(ctx context.Context, bandID int) (int, error)
 	AddUserToBand(ctx context.Context, userID, bandID int, role string) error
 	SetDefaultBand(ctx context.Context, userID, bandID int) error
-	SearchUsersByUsername(ctx context.Context, usernameQuery string) ([]model.User, error)
 }
 
 type PgUserRepository struct {
@@ -244,26 +243,6 @@ func (r *PgUserRepository) AddUserToBand(ctx context.Context, userID, bandID int
 	query := `INSERT INTO band_users (user_id, band_id, role) VALUES ($1, $2, $3)`
 	_, err := r.DB.Exec(ctx, query, userID, bandID, role)
 	return err
-}
-
-func (r *PgUserRepository) SearchUsersByUsername(ctx context.Context, usernameQuery string) ([]model.User, error) {
-	users := make([]model.User, 0)
-	query := `SELECT id, username FROM users WHERE username ILIKE $1 LIMIT 10`
-
-	rows, err := r.DB.Query(ctx, query, usernameQuery+"%")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var user model.User
-		if err := rows.Scan(&user.ID, &user.Username); err != nil {
-			return nil, err
-		}
-		users = append(users, user)
-	}
-	return users, rows.Err()
 }
 
 func (r *PgUserRepository) CreateBand(ctx context.Context, name string, ownerUserID int) (model.Band, error) {

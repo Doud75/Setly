@@ -1,0 +1,27 @@
+# Dependencies & build output (reinstalled / regenerated in the image)
+node_modules
+.svelte-kit
+build
+
+# Test artifacts
+playwright-report
+test-results
+coverage
+
+# IDE / OS
+.idea
+.vscode
+.DS_Store
+
+# Version control
+.git
+.gitignore
+
+# Docker & logs
+Dockerfile
+.dockerignore
+*.log
+
+# Environment files (never bake secrets into the image)
+.env
+.env.*

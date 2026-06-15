@@ -21,6 +21,9 @@
             class="flex items-center gap-3 rounded-lg px-4 py-3 shadow-lg text-sm font-medium max-w-sm pointer-events-auto {styleMap[toast.type]}"
             transition:fly={{ y: -12, duration: 250 }}
         >
+            <!-- XSS-safe: iconMap holds only hardcoded, static SVG strings keyed by toast.type.
+                 NEVER interpolate user-controlled data here. User text goes through {toast.message} below,
+                 which Svelte auto-escapes. -->
             <!-- eslint-disable-next-line svelte/no-at-html-tags -->
             {@html iconMap[toast.type]}
             <span>{toast.message}</span>

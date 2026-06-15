@@ -37,14 +37,8 @@ export const handle: Handle = async ({ event, resolve }) => {
             decoded = jwtDecode<UserPayload>(token);
             const expiresIn = decoded.exp * 1000 - Date.now();
             needsRefresh = expiresIn < 0;
-        } catch (error) {
-            console.log('[AUTH] JWT decode failed:', error);
+        } catch {
             needsRefresh = true;
-        }
-    } else {
-        const path = event.url.pathname;
-        if (path.startsWith('/api') || path.startsWith('/dashboard') || path.startsWith('/setlist') || path.startsWith('/song') || path.startsWith('/interlude') || path.startsWith('/settings')) {
-            console.log(`[${new Date().toISOString()}] [AUTH] No JWT token found for protected route: ${path}`);
         }
     }
 

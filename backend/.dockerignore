@@ -1,0 +1,22 @@
+# Version control
+.git
+.gitignore
+
+# IDE / OS
+.idea
+.vscode
+.DS_Store
+
+# Build & test artifacts
+coverage.html
+coverage.out
+*.test
+
+# Docker & docs (not needed inside the image)
+Dockerfile
+.dockerignore
+README.md
+
+# Environment files (never bake secrets into the image)
+.env
+.env.*

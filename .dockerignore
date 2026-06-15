@@ -1,0 +1,35 @@
+# Root .dockerignore — applies if a build ever uses the repo root as context.
+# Per-service builds use ./backend and ./frontend, which have their own .dockerignore.
+
+# Version control & CI
+.git
+.github
+.gitignore
+
+# IDE / OS
+.idea
+.vscode
+.DS_Store
+
+# Dependencies & build output
+node_modules
+**/node_modules
+**/.svelte-kit
+**/build
+
+# Local data & test/perf artifacts
+postgres-data
+k6
+**/playwright-report
+**/test-results
+**/coverage.html
+**/coverage.out
+repomix-output.xml
+
+# Docs
+*.md
+
+# Environment files (keep .env.example available as a reference)
+.env
+.env.*
+!.env.example

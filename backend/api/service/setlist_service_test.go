@@ -462,7 +462,7 @@ func TestSetlistService_ItemErrors(t *testing.T) {
 		mockRepo := mocks.NewMockSetlistRepository(ctrl)
 		svc := SetlistService{SetlistRepo: mockRepo}
 
-		mockRepo.EXPECT().DeleteSetlistItem(ctx, itemID, bandID).Return(sql.ErrNoRows)
+		mockRepo.EXPECT().DeleteSetlistItem(ctx, itemID, bandID).Return(0, sql.ErrNoRows)
 
 		if err := svc.DeleteItem(ctx, itemID, bandID); !errors.Is(err, ErrItemNotFound) {
 			t.Fatalf("expected ErrItemNotFound, got %v", err)

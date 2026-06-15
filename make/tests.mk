@@ -24,6 +24,15 @@ test-backend-cover:
 	@cd backend && go tool cover -html=coverage.out -o coverage.html
 	@echo "✅ Backend Unit Tests Coverage finished. Report available in backend/coverage.html"
 
+govulncheck:
+	@echo "--- Running govulncheck inside Docker (golang:1.25.11-bookworm) ---"
+	@docker run --rm \
+		-v $(CURDIR)/backend:/app \
+		-w /app \
+		golang:1.25.11-bookworm \
+		sh -c "go install golang.org/x/vuln/cmd/govulncheck@latest && govulncheck ./..."
+	@echo "✅ govulncheck finished."
+
 test-unit-watch:
 	@echo "--- Running Unit Tests in watch mode ---"
 	@cd frontend && npx vitest
@@ -275,7 +284,7 @@ run-playwright-offline:
 	@cd frontend && npx playwright test tests/offline/
 
 # --- Déclaration .PHONY pour toutes les cibles ---
-.PHONY: test-all test-unit test-unit-watch test-backend test-backend-cover \
+.PHONY: test-all test-unit test-unit-watch test-backend test-backend-cover govulncheck \
 		test test-setlist test-song test-settings test-interlude \
 		test-multi-group test-cross-band test-duplicate-band test-dashboard test-leave-band test-default-band \
 		test-auth test-auth-login test-auth-signup \
