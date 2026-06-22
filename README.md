@@ -33,6 +33,13 @@ Ce projet est un monorepo qui combine un backend en Go avec un frontend moderne 
     *   **Automatisation** : `Makefile` pour des commandes simplifiées
     *   **Intégration Continue** : GitHub Actions
 
+## 🔐 Authentification & rafraîchissement des tokens
+
+> ⚠️ **Contrainte de scalabilité du frontend.**
+> Le rafraîchissement des JWT (`frontend/src/hooks.server.ts`) utilise un **single-flight en mémoire process** : pour un même `refresh_token`, un seul appel `/auth/refresh` est émis et son résultat est partagé/caché (~60 s) entre toutes les requêtes concurrentes. Cela évite la course de rotation qui, en PWA sur mauvaise connexion, déclenchait plusieurs rotations parallèles et déconnectait l'utilisateur (`refresh token not found`).
+>
+> Ce mécanisme repose sur le fait que **le frontend tourne en un seul conteneur Node**. Si un jour le frontend est scalé horizontalement (plusieurs réplicas), la coalescence en mémoire ne suffira plus : il faudra basculer sur une **grace period côté backend** (tolérer brièvement l'ancien refresh token après rotation), ou un store de coalescence partagé (Redis).
+
 ## 🚀 Démarrage Rapide
 
 Le projet est entièrement conteneurisé avec Docker, ce qui simplifie grandement l'installation.

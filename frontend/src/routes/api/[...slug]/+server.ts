@@ -25,11 +25,24 @@ const handleProxy: RequestHandler = async ({ request, params, locals, getClientA
 	}
 
 	try {
-        return await globalThis.fetch(proxyUrl, {
+		const res = await globalThis.fetch(proxyUrl, {
 			method: request.method,
 			headers: headers,
 			body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : null,
 			duplex: 'half'
+		});
+
+		// Recopie dans une Response à headers mutables : la Response brute de fetch()
+		// a des Headers immuables, et SvelteKit doit pouvoir y attacher les Set-Cookie
+		// posés lors d'un refresh de token (sinon TypeError: immutable -> 500).
+		const responseHeaders = new Headers(res.headers);
+		responseHeaders.delete('content-encoding'); // body déjà décodé par fetch
+		responseHeaders.delete('content-length'); // longueur invalide après recopie
+
+		return new Response(res.body, {
+			status: res.status,
+			statusText: res.statusText,
+			headers: responseHeaders
 		});
 	} catch (e) {
 		console.error('API proxy error:', e);
