@@ -12,6 +12,82 @@ const BACKEND_URL = env.BACKEND_INTERNAL_URL || 'http://backend:8089/api';
 const AUTH_ROUTES = ['/login', '/signup'];
 const PUBLIC_ROUTES = ['/offline'];
 
+type RefreshResult = {
+    token: string;
+    refresh_token: string;
+    bands?: { id: number }[];
+};
+
+// Single-flight du refresh : le frontend tourne en un seul process Node, donc une Map
+// en mémoire suffit pour coalescer les refresh concurrents. Sans ça, les N requêtes
+// /api/* parallèles déclenchaient chacune une rotation du refresh token côté backend,
+// et les perdantes recevaient "refresh token not found" -> déconnexion.
+const refreshInFlight = new Map<string, Promise<RefreshResult | null>>();
+const refreshCache = new Map<string, { result: RefreshResult; expiresAt: number }>();
+const REFRESH_CACHE_TTL = 60_000; // ~60s : couvre la fenêtre de propagation du cookie au client
+
+// Appelle /auth/refresh une seule fois. Ne touche pas aux cookies (l'appelant s'en charge).
+async function doRefresh(refreshToken: string, clientIp: string): Promise<RefreshResult | null> {
+    try {
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (clientIp) {
+            headers['X-Forwarded-For'] = clientIp;
+        }
+
+        const refreshResponse = await fetch(`${BACKEND_URL}/auth/refresh`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ refresh_token: refreshToken }),
+            signal: AbortSignal.timeout(5000)
+        });
+
+        if (refreshResponse.ok) {
+            return (await refreshResponse.json()) as RefreshResult;
+        }
+
+        console.error('[AUTH] Refresh failed with status:', refreshResponse.status);
+        return null;
+    } catch (error) {
+        console.error('[AUTH] Refresh error:', error);
+        return null;
+    }
+}
+
+// Coalesce les refresh pour un même token : un seul appel réseau partagé par toutes
+// les requêtes concurrentes, et un court cache pour celles arrivant juste après.
+async function getRefreshResult(refreshToken: string, clientIp: string): Promise<RefreshResult | null> {
+    // élagage paresseux des entrées expirées (la map reste minuscule)
+    const now = Date.now();
+    for (const [key, entry] of refreshCache) {
+        if (entry.expiresAt <= now) {
+            refreshCache.delete(key);
+        }
+    }
+
+    const cached = refreshCache.get(refreshToken);
+    if (cached && cached.expiresAt > now) {
+        return cached.result;
+    }
+
+    const inflight = refreshInFlight.get(refreshToken);
+    if (inflight) {
+        return inflight;
+    }
+
+    const promise = doRefresh(refreshToken, clientIp)
+        .then((result) => {
+            // on ne cache pas les échecs : un vrai 401 reste réessayable
+            if (result) {
+                refreshCache.set(refreshToken, { result, expiresAt: Date.now() + REFRESH_CACHE_TTL });
+            }
+            return result;
+        })
+        .finally(() => refreshInFlight.delete(refreshToken));
+
+    refreshInFlight.set(refreshToken, promise);
+    return promise;
+}
+
 export const handle: Handle = async ({ event, resolve }) => {
     if (event.url.pathname === '/logout') {
         return resolve(event);
@@ -43,59 +119,49 @@ export const handle: Handle = async ({ event, resolve }) => {
     }
 
     if ((!token || needsRefresh) && refreshToken) {
+        let clientIp = '';
         try {
-            const clientIp = event.getClientAddress();
-            const refreshResponse = await fetch(`${BACKEND_URL}/auth/refresh`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Forwarded-For': clientIp
-                },
-                body: JSON.stringify({ refresh_token: refreshToken }),
-                signal: AbortSignal.timeout(3000)
+            clientIp = event.getClientAddress();
+        } catch {
+            /* ignore */
+        }
+
+        const refreshData = await getRefreshResult(refreshToken, clientIp);
+
+        if (refreshData) {
+            const cookieOptions = {
+                path: '/',
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax' as const
+            };
+
+            event.cookies.set('jwt_token', refreshData.token, {
+                ...cookieOptions,
+                maxAge: 60 * 60 * 24 * 30
             });
 
-            if (refreshResponse.ok) {
-                const refreshData = await refreshResponse.json();
-                
-                const cookieOptions = {
-                    path: '/',
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === 'production',
-                    sameSite: 'lax' as const
-                };
-                
-                event.cookies.set('jwt_token', refreshData.token, {
-                    ...cookieOptions,
-                    maxAge: 60 * 60 * 24 * 30
-                });
-                
-                event.cookies.set('refresh_token', refreshData.refresh_token, {
-                    ...cookieOptions,
-                    maxAge: 60 * 60 * 24 * 30
-                });
+            event.cookies.set('refresh_token', refreshData.refresh_token, {
+                ...cookieOptions,
+                maxAge: 60 * 60 * 24 * 30
+            });
 
-                if (refreshData.bands && refreshData.bands.length > 0) {
-                    event.cookies.set('user_bands', JSON.stringify(refreshData.bands), {
-                        ...cookieOptions,
-                        maxAge: 60 * 60 * 24 * 30
-                    });
-                    const currentBandId = activeBandId ? parseInt(activeBandId) : null;
-                    const stillValid = currentBandId && refreshData.bands.some((b: { id: number }) => b.id === currentBandId);
-                    const newActiveBandId = stillValid ? currentBandId!.toString() : refreshData.bands[0].id.toString();
-                    event.cookies.set('active_band_id', newActiveBandId, {
-                        ...cookieOptions,
-                        maxAge: 60 * 60 * 24 * 30
-                    });
-                }
-                
-                event.locals.token = refreshData.token;
-                decoded = jwtDecode<UserPayload>(refreshData.token);
-            } else {
-                console.error('[AUTH] Refresh failed with status:', refreshResponse.status);
+            if (refreshData.bands && refreshData.bands.length > 0) {
+                event.cookies.set('user_bands', JSON.stringify(refreshData.bands), {
+                    ...cookieOptions,
+                    maxAge: 60 * 60 * 24 * 30
+                });
+                const currentBandId = activeBandId ? parseInt(activeBandId) : null;
+                const stillValid = currentBandId && refreshData.bands.some((b: { id: number }) => b.id === currentBandId);
+                const newActiveBandId = stillValid ? currentBandId!.toString() : refreshData.bands[0].id.toString();
+                event.cookies.set('active_band_id', newActiveBandId, {
+                    ...cookieOptions,
+                    maxAge: 60 * 60 * 24 * 30
+                });
             }
-        } catch (error) {
-            console.error('[AUTH] Refresh error:', error);
+
+            event.locals.token = refreshData.token;
+            decoded = jwtDecode<UserPayload>(refreshData.token);
         }
     }
 
