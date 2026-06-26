@@ -13,7 +13,7 @@ declare global {
 }
 
 const STATIC_CACHE = 'static-v1';
-const PAGES_CACHE = 'pages-v1';
+const PAGES_CACHE = 'pages-v2';
 const API_CACHE = 'api-v1';
 const OFFLINE_URL = '/offline';
 
@@ -40,10 +40,12 @@ self.addEventListener('install', (event: ExtendableEvent) => {
 				const pagesCache = await caches.open(PAGES_CACHE);
 				await Promise.allSettled(
 					['/', '/login', '/signup'].map((url) =>
-						fetch(url)
+						fetch(url, { redirect: 'manual' })
 							.then((res) => {
-								if (res.ok || res.type === 'opaqueredirect') {
-									return pagesCache.put(url, cleanResponse(res));
+								// Ne jamais cacher une redirection (ex: `/` → `/login` quand
+								// déconnecté), sinon on sert la page de login sous l'URL `/`.
+								if (res.ok && !res.redirected && res.type !== 'opaqueredirect') {
+									return pagesCache.put(url, res);
 								}
 							})
 							.catch((err) => console.warn('[SW] Failed to cache auth page:', url, err))
@@ -120,21 +122,20 @@ async function cacheFirst(request: Request): Promise<Response> {
 	}
 }
 
-function cleanResponse(response: Response): Response {
-	if (!response.redirected) return response;
-	return new Response(response.body, {
-		status: response.status,
-		statusText: response.statusText,
-		headers: response.headers
-	});
-}
-
 async function networkFirstNavigation(request: Request): Promise<Response> {
 	const cache = await caches.open(PAGES_CACHE);
 	try {
-		const response = await fetch(request);
+		// `redirect: 'manual'` empêche le SW de suivre une redirection serveur
+		// (ex: `/` → `/login` quand déconnecté) et de la servir en 200 sous l'URL
+		// d'origine. On renvoie la redirection telle quelle pour que le navigateur
+		// la suive et mette à jour la barre d'URL (sinon le formulaire de login
+		// posterait sur `/` → 405 "No form actions exist for this page").
+		const response = await fetch(request, { redirect: 'manual' });
+		if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
+			return response;
+		}
 		if (response.ok) {
-			await cachePut(PAGES_CACHE, request, cleanResponse(response.clone()), 20);
+			await cachePut(PAGES_CACHE, request, response.clone(), 20);
 		}
 		return response;
 	} catch {
