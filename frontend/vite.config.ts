@@ -26,7 +26,7 @@ export default defineConfig({
 				description: 'Une application pour gérer les setlists de votre groupe',
 				start_url: '/',
 				scope: '/',
-				theme_color: '#333333',
+				theme_color: '#f8fafc',
 				background_color: '#000000',
 				dir: 'ltr',
 				display: 'standalone',

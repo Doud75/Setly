@@ -2,7 +2,7 @@
     let { children } = $props();
 </script>
 
-<main class="flex min-h-screen items-center justify-center bg-slate-50 p-4 dark:bg-slate-900">
+<main class="flex min-h-svh items-center justify-center bg-slate-50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:bg-slate-900">
     <div class="w-full max-w-md">
         <div class="flex justify-center mb-6">
             <svg class="h-12 w-auto text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
