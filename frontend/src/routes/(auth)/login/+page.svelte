@@ -3,6 +3,7 @@
     import Input from '$lib/components/ui/Input.svelte';
     import { enhance } from '$app/forms';
     import { navigating } from '$app/stores';
+    import { onMount } from 'svelte';
 
     type ActionData = {
         error?: string;
@@ -22,8 +23,6 @@
             ? (form.code && errorMessages[form.code]) ?? form.error ?? 'Une erreur inattendue s\'est produite.'
             : null
     );
-<<<<<<< Updated upstream
-=======
 
     // === DEBUG TEMPORAIRE (à retirer) : collecte côté client + envoi serveur ===
     // On capte les événements bruts (capture, hors délégation Svelte) sur le bouton
@@ -72,7 +71,10 @@
             formEl?.removeEventListener('submit', onSubmit, { capture: true });
         };
     });
->>>>>>> Stashed changes
+        return () => {
+            for (const t of types) btnWrap?.removeEventListener(t, handler, { capture: true });
+        };
+    });
 </script>
 
 <div class="space-y-6">
@@ -95,13 +97,15 @@
             </p>
         {/if}
 
-        <Button isLoading={$navigating?.type === 'form'}>
-            {#if $navigating?.type === 'form'}
-                Connexion...
-            {:else}
-                Se connecter
-            {/if}
-        </Button>
+        <div bind:this={btnWrap}>
+            <Button isLoading={$navigating?.type === 'form'}>
+                {#if $navigating?.type === 'form'}
+                    Connexion...
+                {:else}
+                    Se connecter
+                {/if}
+            </Button>
+        </div>
     </form>
 
     <p class="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
