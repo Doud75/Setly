@@ -71,10 +71,6 @@
             formEl?.removeEventListener('submit', onSubmit, { capture: true });
         };
     });
-        return () => {
-            for (const t of types) btnWrap?.removeEventListener(t, handler, { capture: true });
-        };
-    });
 </script>
 
 <div class="space-y-6">
