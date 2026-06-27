@@ -3,6 +3,7 @@
     import Input from '$lib/components/ui/Input.svelte';
     import { enhance } from '$app/forms';
     import { navigating } from '$app/stores';
+    import { onMount } from 'svelte';
 
     type ActionData = {
         error?: string;
@@ -22,6 +23,46 @@
             ? (form.code && errorMessages[form.code]) ?? form.error ?? 'Une erreur inattendue s\'est produite.'
             : null
     );
+
+    // === DEBUG TEMPORAIRE (à retirer) : collecte côté client + envoi serveur ===
+    // On capte les événements bruts (capture, hors délégation Svelte) sur le bouton
+    // « Se connecter » et on envoie les infos au endpoint /login/debug -> logs front.
+    let btnWrap: HTMLDivElement | undefined;
+    onMount(() => {
+        const send = (ev: string, e?: Event) => {
+            try {
+                const btn = btnWrap?.querySelector('button');
+                let hitCenter = 'n/a';
+                const r = btn?.getBoundingClientRect();
+                if (r) {
+                    const h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+                    hitCenter = h ? `${h.tagName}.${(h.getAttribute('class') || '').slice(0, 30)}` : 'null';
+                }
+                const tgt = e?.target as HTMLElement | undefined;
+                const body = JSON.stringify({
+                    ev,
+                    target: tgt ? `${tgt.tagName}.${(tgt.getAttribute('class') || '').slice(0, 30)}` : 'n/a',
+                    hitCenter,
+                    btnDisabled: btn?.disabled ?? null,
+                    navigating: $navigating?.type ?? 'null',
+                    vh: window.innerHeight,
+                    vvh: window.visualViewport?.height ?? null,
+                    ua: navigator.userAgent
+                });
+                const blob = new Blob([body], { type: 'application/json' });
+                if (!navigator.sendBeacon('/login/debug', blob)) {
+                    fetch('/login/debug', { method: 'POST', body, headers: { 'content-type': 'application/json' }, keepalive: true });
+                }
+            } catch { /* ignore */ }
+        };
+        send('load');
+        const types = ['touchstart', 'pointerup', 'click'] as const;
+        const handler = (e: Event) => send(e.type, e);
+        for (const t of types) btnWrap?.addEventListener(t, handler, { capture: true, passive: true });
+        return () => {
+            for (const t of types) btnWrap?.removeEventListener(t, handler, { capture: true });
+        };
+    });
 </script>
 
 <div class="space-y-6">
@@ -44,13 +85,15 @@
             </p>
         {/if}
 
-        <Button isLoading={$navigating?.type === 'form'}>
-            {#if $navigating?.type === 'form'}
-                Connexion...
-            {:else}
-                Se connecter
-            {/if}
-        </Button>
+        <div bind:this={btnWrap}>
+            <Button isLoading={$navigating?.type === 'form'}>
+                {#if $navigating?.type === 'form'}
+                    Connexion...
+                {:else}
+                    Se connecter
+                {/if}
+            </Button>
+        </div>
     </form>
 
     <p class="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
