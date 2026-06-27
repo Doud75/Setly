@@ -41,7 +41,7 @@
         </p>
     </div>
 
-    <form method="POST" action="/signup" use:enhance class="space-y-6">
+    <form method="POST" use:enhance class="space-y-6">
         {#if data.redirectTo}
             <input type="hidden" name="redirectTo" value={data.redirectTo} />
         {/if}

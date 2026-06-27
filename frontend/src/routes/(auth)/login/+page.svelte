@@ -3,7 +3,6 @@
     import Input from '$lib/components/ui/Input.svelte';
     import { enhance } from '$app/forms';
     import { navigating } from '$app/stores';
-    import { onMount } from 'svelte';
 
     type ActionData = {
         error?: string;
@@ -23,69 +22,6 @@
             ? (form.code && errorMessages[form.code]) ?? form.error ?? 'Une erreur inattendue s\'est produite.'
             : null
     );
-
-    // === DEBUG TEMPORAIRE (à retirer) : collecte côté client + envoi serveur ===
-    let btnWrap: HTMLDivElement | undefined;
-
-    function send(ev: string, extra?: Record<string, unknown>) {
-        try {
-            const body = JSON.stringify({ ev, path: location.pathname, ...extra });
-            const blob = new Blob([body], { type: 'application/json' });
-            if (!navigator.sendBeacon('/login/debug', blob)) {
-                fetch('/login/debug', { method: 'POST', body, headers: { 'content-type': 'application/json' }, keepalive: true });
-            }
-        } catch { /* ignore */ }
-    }
-
-    // Instrumente le cycle de vie de use:enhance pour voir ce qui se passe APRÈS le
-    // submit : le fetch part-il ? quel résultat le serveur renvoie-t-il ? erreur ?
-    type EnhanceResult = { type?: string; status?: number; location?: string };
-    function enhanceLog() {
-        send('enhance:submit');
-        return async ({ result, update }: { result: EnhanceResult; update: () => Promise<void> }) => {
-            send('enhance:result', { resultType: result?.type, status: result?.status, location: result?.location });
-            await update();
-        };
-    }
-
-    onMount(() => {
-        send('load', { ua: navigator.userAgent });
-        const types = ['touchstart', 'pointerup', 'click'] as const;
-        const handler = (e: Event) => send(e.type, { target: (e.target as HTMLElement)?.tagName });
-        for (const t of types) btnWrap?.addEventListener(t, handler, { capture: true, passive: true });
-        const formEl = btnWrap?.closest('form');
-        const onSubmit = () => send('submit');
-        formEl?.addEventListener('submit', onSubmit, { capture: true });
-        const onErr = (e: ErrorEvent) => send('window-error', { msg: String(e.message), src: e.filename, line: e.lineno });
-        const onRej = (e: PromiseRejectionEvent) => send('unhandledrejection', { reason: String(e.reason) });
-        window.addEventListener('error', onErr);
-        window.addEventListener('unhandledrejection', onRej);
-
-        // Capture la VRAIE réponse HTTP du fetch d'enhance (statut, redirection, URL finale).
-        const origFetch = window.fetch;
-        window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-            const url = typeof input === 'string' ? input : input instanceof Request ? input.url : String(input);
-            const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase();
-            const watch = method === 'POST' && url.includes('/login') && !url.includes('/login/debug');
-            if (watch) send('fetch:start', { url });
-            try {
-                const res = await origFetch(input, init);
-                if (watch) send('fetch:done', { url, status: res.status, redirected: res.redirected, finalUrl: res.url, type: res.type });
-                return res;
-            } catch (err) {
-                if (watch) send('fetch:error', { url, err: String(err) });
-                throw err;
-            }
-        };
-
-        return () => {
-            for (const t of types) btnWrap?.removeEventListener(t, handler, { capture: true });
-            formEl?.removeEventListener('submit', onSubmit, { capture: true });
-            window.removeEventListener('error', onErr);
-            window.removeEventListener('unhandledrejection', onRej);
-            window.fetch = origFetch;
-        };
-    });
 </script>
 
 <div class="space-y-6">
@@ -95,7 +31,7 @@
         </h2>
     </div>
 
-    <form method="POST" action="/login" use:enhance={enhanceLog} class="space-y-6">
+    <form method="POST" use:enhance class="space-y-6">
         {#if data.redirectTo}
             <input type="hidden" name="redirectTo" value={data.redirectTo} />
         {/if}
@@ -108,15 +44,13 @@
             </p>
         {/if}
 
-        <div bind:this={btnWrap}>
-            <Button isLoading={$navigating?.type === 'form'}>
-                {#if $navigating?.type === 'form'}
-                    Connexion...
-                {:else}
-                    Se connecter
-                {/if}
-            </Button>
-        </div>
+        <Button isLoading={$navigating?.type === 'form'}>
+            {#if $navigating?.type === 'form'}
+                Connexion...
+            {:else}
+                Se connecter
+            {/if}
+        </Button>
     </form>
 
     <p class="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
