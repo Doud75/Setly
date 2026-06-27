@@ -3,6 +3,15 @@ import type { Actions } from './$types';
 
 export const actions: Actions = {
     default: async ({ request, cookies, fetch, url }) => {
+        // DEBUG TEMPORAIRE (à retirer) : trace la soumission du bouton « Se connecter »
+        // dans les logs du container frontend (`make logs`). Si ce log n'apparaît PAS
+        // quand on tape le bouton sur iPhone, c'est que le clic ne produit aucune
+        // soumission qui atteint le serveur.
+        console.log('[LOGIN-DEBUG] action hit', {
+            postedTo: url.href,
+            ua: request.headers.get('user-agent'),
+            contentType: request.headers.get('content-type')
+        });
         const contentType = request.headers.get('content-type') || '';
         if (!contentType.includes('application/x-www-form-urlencoded') && !contentType.includes('multipart/form-data')) {
             return fail(415, { error: 'Format de requête invalide (attendu: form-data ou urlencoded)' });
