@@ -39,8 +39,12 @@
                     hitCenter = h ? `${h.tagName}.${(h.getAttribute('class') || '').slice(0, 30)}` : 'null';
                 }
                 const tgt = e?.target as HTMLElement | undefined;
+                const formEl = btnWrap?.closest('form') as HTMLFormElement | null;
                 const body = JSON.stringify({
                     ev,
+                    path: location.pathname,
+                    formActionAttr: formEl?.getAttribute('action') ?? '(none→current url)',
+                    formActionResolved: formEl?.action ?? 'n/a',
                     target: tgt ? `${tgt.tagName}.${(tgt.getAttribute('class') || '').slice(0, 30)}` : 'n/a',
                     hitCenter,
                     btnDisabled: btn?.disabled ?? null,
@@ -59,6 +63,14 @@
         const types = ['touchstart', 'pointerup', 'click'] as const;
         const handler = (e: Event) => send(e.type, e);
         for (const t of types) btnWrap?.addEventListener(t, handler, { capture: true, passive: true });
+        const formEl = btnWrap?.closest('form');
+        const onSubmit = (e: Event) => send('submit', e);
+        formEl?.addEventListener('submit', onSubmit, { capture: true });
+        return () => {
+            for (const t of types) btnWrap?.removeEventListener(t, handler, { capture: true });
+            formEl?.removeEventListener('submit', onSubmit, { capture: true });
+        };
+    });
         return () => {
             for (const t of types) btnWrap?.removeEventListener(t, handler, { capture: true });
         };
@@ -72,7 +84,7 @@
         </h2>
     </div>
 
-    <form method="POST" use:enhance class="space-y-6">
+    <form method="POST" action="/login" use:enhance class="space-y-6">
         {#if data.redirectTo}
             <input type="hidden" name="redirectTo" value={data.redirectTo} />
         {/if}
