@@ -22,6 +22,57 @@
             ? (form.code && errorMessages[form.code]) ?? form.error ?? 'Une erreur inattendue s\'est produite.'
             : null
     );
+<<<<<<< Updated upstream
+=======
+
+    // === DEBUG TEMPORAIRE (à retirer) : collecte côté client + envoi serveur ===
+    // On capte les événements bruts (capture, hors délégation Svelte) sur le bouton
+    // « Se connecter » et on envoie les infos au endpoint /login/debug -> logs front.
+    let btnWrap: HTMLDivElement | undefined;
+    onMount(() => {
+        const send = (ev: string, e?: Event) => {
+            try {
+                const btn = btnWrap?.querySelector('button');
+                let hitCenter = 'n/a';
+                const r = btn?.getBoundingClientRect();
+                if (r) {
+                    const h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+                    hitCenter = h ? `${h.tagName}.${(h.getAttribute('class') || '').slice(0, 30)}` : 'null';
+                }
+                const tgt = e?.target as HTMLElement | undefined;
+                const formEl = btnWrap?.closest('form') as HTMLFormElement | null;
+                const body = JSON.stringify({
+                    ev,
+                    path: location.pathname,
+                    formActionAttr: formEl?.getAttribute('action') ?? '(none→current url)',
+                    formActionResolved: formEl?.action ?? 'n/a',
+                    target: tgt ? `${tgt.tagName}.${(tgt.getAttribute('class') || '').slice(0, 30)}` : 'n/a',
+                    hitCenter,
+                    btnDisabled: btn?.disabled ?? null,
+                    navigating: $navigating?.type ?? 'null',
+                    vh: window.innerHeight,
+                    vvh: window.visualViewport?.height ?? null,
+                    ua: navigator.userAgent
+                });
+                const blob = new Blob([body], { type: 'application/json' });
+                if (!navigator.sendBeacon('/login/debug', blob)) {
+                    fetch('/login/debug', { method: 'POST', body, headers: { 'content-type': 'application/json' }, keepalive: true });
+                }
+            } catch { /* ignore */ }
+        };
+        send('load');
+        const types = ['touchstart', 'pointerup', 'click'] as const;
+        const handler = (e: Event) => send(e.type, e);
+        for (const t of types) btnWrap?.addEventListener(t, handler, { capture: true, passive: true });
+        const formEl = btnWrap?.closest('form');
+        const onSubmit = (e: Event) => send('submit', e);
+        formEl?.addEventListener('submit', onSubmit, { capture: true });
+        return () => {
+            for (const t of types) btnWrap?.removeEventListener(t, handler, { capture: true });
+            formEl?.removeEventListener('submit', onSubmit, { capture: true });
+        };
+    });
+>>>>>>> Stashed changes
 </script>
 
 <div class="space-y-6">
@@ -31,7 +82,7 @@
         </h2>
     </div>
 
-    <form method="POST" use:enhance class="space-y-6">
+    <form method="POST" action="/login" use:enhance class="space-y-6">
         {#if data.redirectTo}
             <input type="hidden" name="redirectTo" value={data.redirectTo} />
         {/if}
