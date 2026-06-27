@@ -19,7 +19,11 @@
         children: Snippet;
     }>();
 
-    const baseClasses = "flex justify-center rounded-md px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-800 disabled:cursor-not-allowed disabled:opacity-60";
+    // cursor-pointer + touch-manipulation : Tailwind v4 met les boutons en
+    // cursor:default, or iOS Safari ne synthétise un click au tap que sur les
+    // éléments « clickable » (cursor:pointer étant le déclencheur fiable). Sans
+    // ça, le bouton répond à la souris mais pas au tactile sur iPhone.
+    const baseClasses = "flex cursor-pointer touch-manipulation justify-center rounded-md px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-800 disabled:cursor-not-allowed disabled:opacity-60";
 
     const variants = {
         primary: 'bg-indigo-600 text-white hover:bg-indigo-500 focus:ring-indigo-500',
