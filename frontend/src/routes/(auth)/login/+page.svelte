@@ -25,50 +25,46 @@
     );
 
     // === DEBUG TEMPORAIRE (à retirer) : collecte côté client + envoi serveur ===
-    // On capte les événements bruts (capture, hors délégation Svelte) sur le bouton
-    // « Se connecter » et on envoie les infos au endpoint /login/debug -> logs front.
     let btnWrap: HTMLDivElement | undefined;
-    onMount(() => {
-        const send = (ev: string, e?: Event) => {
-            try {
-                const btn = btnWrap?.querySelector('button');
-                let hitCenter = 'n/a';
-                const r = btn?.getBoundingClientRect();
-                if (r) {
-                    const h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-                    hitCenter = h ? `${h.tagName}.${(h.getAttribute('class') || '').slice(0, 30)}` : 'null';
-                }
-                const tgt = e?.target as HTMLElement | undefined;
-                const formEl = btnWrap?.closest('form') as HTMLFormElement | null;
-                const body = JSON.stringify({
-                    ev,
-                    path: location.pathname,
-                    formActionAttr: formEl?.getAttribute('action') ?? '(none→current url)',
-                    formActionResolved: formEl?.action ?? 'n/a',
-                    target: tgt ? `${tgt.tagName}.${(tgt.getAttribute('class') || '').slice(0, 30)}` : 'n/a',
-                    hitCenter,
-                    btnDisabled: btn?.disabled ?? null,
-                    navigating: $navigating?.type ?? 'null',
-                    vh: window.innerHeight,
-                    vvh: window.visualViewport?.height ?? null,
-                    ua: navigator.userAgent
-                });
-                const blob = new Blob([body], { type: 'application/json' });
-                if (!navigator.sendBeacon('/login/debug', blob)) {
-                    fetch('/login/debug', { method: 'POST', body, headers: { 'content-type': 'application/json' }, keepalive: true });
-                }
-            } catch { /* ignore */ }
+
+    function send(ev: string, extra?: Record<string, unknown>) {
+        try {
+            const body = JSON.stringify({ ev, path: location.pathname, ...extra });
+            const blob = new Blob([body], { type: 'application/json' });
+            if (!navigator.sendBeacon('/login/debug', blob)) {
+                fetch('/login/debug', { method: 'POST', body, headers: { 'content-type': 'application/json' }, keepalive: true });
+            }
+        } catch { /* ignore */ }
+    }
+
+    // Instrumente le cycle de vie de use:enhance pour voir ce qui se passe APRÈS le
+    // submit : le fetch part-il ? quel résultat le serveur renvoie-t-il ? erreur ?
+    type EnhanceResult = { type?: string; status?: number; location?: string };
+    function enhanceLog() {
+        send('enhance:submit');
+        return async ({ result, update }: { result: EnhanceResult; update: () => Promise<void> }) => {
+            send('enhance:result', { resultType: result?.type, status: result?.status, location: result?.location });
+            await update();
         };
-        send('load');
+    }
+
+    onMount(() => {
+        send('load', { ua: navigator.userAgent });
         const types = ['touchstart', 'pointerup', 'click'] as const;
-        const handler = (e: Event) => send(e.type, e);
+        const handler = (e: Event) => send(e.type, { target: (e.target as HTMLElement)?.tagName });
         for (const t of types) btnWrap?.addEventListener(t, handler, { capture: true, passive: true });
         const formEl = btnWrap?.closest('form');
-        const onSubmit = (e: Event) => send('submit', e);
+        const onSubmit = () => send('submit');
         formEl?.addEventListener('submit', onSubmit, { capture: true });
+        const onErr = (e: ErrorEvent) => send('window-error', { msg: String(e.message), src: e.filename, line: e.lineno });
+        const onRej = (e: PromiseRejectionEvent) => send('unhandledrejection', { reason: String(e.reason) });
+        window.addEventListener('error', onErr);
+        window.addEventListener('unhandledrejection', onRej);
         return () => {
             for (const t of types) btnWrap?.removeEventListener(t, handler, { capture: true });
             formEl?.removeEventListener('submit', onSubmit, { capture: true });
+            window.removeEventListener('error', onErr);
+            window.removeEventListener('unhandledrejection', onRej);
         };
     });
 </script>
@@ -80,7 +76,7 @@
         </h2>
     </div>
 
-    <form method="POST" action="/login" use:enhance class="space-y-6">
+    <form method="POST" action="/login" use:enhance={enhanceLog} class="space-y-6">
         {#if data.redirectTo}
             <input type="hidden" name="redirectTo" value={data.redirectTo} />
         {/if}
