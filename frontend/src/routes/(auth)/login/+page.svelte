@@ -60,11 +60,30 @@
         const onRej = (e: PromiseRejectionEvent) => send('unhandledrejection', { reason: String(e.reason) });
         window.addEventListener('error', onErr);
         window.addEventListener('unhandledrejection', onRej);
+
+        // Capture la VRAIE réponse HTTP du fetch d'enhance (statut, redirection, URL finale).
+        const origFetch = window.fetch;
+        window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+            const url = typeof input === 'string' ? input : input instanceof Request ? input.url : String(input);
+            const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase();
+            const watch = method === 'POST' && url.includes('/login') && !url.includes('/login/debug');
+            if (watch) send('fetch:start', { url });
+            try {
+                const res = await origFetch(input, init);
+                if (watch) send('fetch:done', { url, status: res.status, redirected: res.redirected, finalUrl: res.url, type: res.type });
+                return res;
+            } catch (err) {
+                if (watch) send('fetch:error', { url, err: String(err) });
+                throw err;
+            }
+        };
+
         return () => {
             for (const t of types) btnWrap?.removeEventListener(t, handler, { capture: true });
             formEl?.removeEventListener('submit', onSubmit, { capture: true });
             window.removeEventListener('error', onErr);
             window.removeEventListener('unhandledrejection', onRej);
+            window.fetch = origFetch;
         };
     });
 </script>
