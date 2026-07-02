@@ -30,6 +30,14 @@ func mapBandError(err error, operation string) error {
 		)
 	case errors.Is(err, service.ErrNotBandMember):
 		return apierror.InvalidRequest("Vous n'êtes pas membre de ce groupe.")
+	case errors.Is(err, service.ErrInvalidRole):
+		return apierror.ValidationFailed("Rôle invalide.")
+	case errors.Is(err, service.ErrCannotDemoteLastAdmin):
+		return apierror.NewUserError(
+			apierror.ErrInvalidRequest,
+			"Impossible de rétrograder : c'est le dernier administrateur du groupe.",
+			http.StatusConflict,
+		)
 	case errors.Is(err, service.ErrBandNameRequired):
 		return apierror.ValidationFailed("Le nom du groupe est requis.")
 	case errors.Is(err, service.ErrUserPasswordRequired):
@@ -100,6 +108,34 @@ func (h BandHandler) RemoveMember(w http.ResponseWriter, r *http.Request) error 
 	}
 
 	RespondNoContent(w)
+	return nil
+}
+
+type UpdateMemberRolePayload struct {
+	Role string `json:"role"`
+}
+
+func (h BandHandler) UpdateMemberRole(w http.ResponseWriter, r *http.Request) error {
+	bandID, err := GetBandID(r)
+	if err != nil {
+		return err
+	}
+
+	userID, err := GetIntParam(r, "userId")
+	if err != nil {
+		return apierror.InvalidRequest("Identifiant utilisateur invalide.")
+	}
+
+	payload, err := DecodeJSON[UpdateMemberRolePayload](r)
+	if err != nil {
+		return err
+	}
+
+	if err := h.UserService.ChangeMemberRole(r.Context(), bandID, userID, payload.Role); err != nil {
+		return mapBandError(err, "changement de rôle d'un membre")
+	}
+
+	RespondOK(w, map[string]string{"role": payload.Role})
 	return nil
 }
 

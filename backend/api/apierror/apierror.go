@@ -1,6 +1,9 @@
 package apierror
 
-import "net/http"
+import (
+	"encoding/json"
+	"net/http"
+)
 
 type AppError struct {
 	Code       string
@@ -11,6 +14,18 @@ type AppError struct {
 
 func (e *AppError) Error() string {
 	return e.Message
+}
+
+// Write sérialise une AppError en réponse JSON `{"error", "code"}`.
+// Partagé par les handlers et les middlewares pour garantir que TOUTE
+// réponse d'erreur du backend soit du JSON.
+func Write(w http.ResponseWriter, e *AppError) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(e.HTTPStatus)
+	json.NewEncoder(w).Encode(map[string]string{
+		"error": e.Message,
+		"code":  e.Code,
+	})
 }
 
 func NewUserError(code, message string, status int) *AppError {
@@ -68,6 +83,14 @@ func InternalError(operation string) *AppError {
 	return NewServerError(ErrInternal, "Une erreur interne s'est produite lors de: "+operation)
 }
 
+func Unauthorized(msg string) *AppError {
+	return NewUserError(ErrUnauthorized, msg, http.StatusUnauthorized)
+}
+
+func Forbidden(msg string) *AppError {
+	return NewUserError(ErrForbidden, msg, http.StatusForbidden)
+}
+
 
 const (
 	ErrInvalidRequest      = "INVALID_REQUEST"
@@ -79,4 +102,6 @@ const (
 	ErrInvalidRefreshToken = "INVALID_REFRESH_TOKEN"
 	ErrWrongCurrentPassword = "WRONG_CURRENT_PASSWORD"
 	ErrInternal            = "INTERNAL_ERROR"
+	ErrUnauthorized        = "UNAUTHORIZED"
+	ErrForbidden           = "FORBIDDEN"
 )

@@ -55,6 +55,20 @@ func (mr *MockUserRepositoryMockRecorder) AddUserToBand(ctx, userID, bandID, rol
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUserToBand", reflect.TypeOf((*MockUserRepository)(nil).AddUserToBand), ctx, userID, bandID, role)
 }
 
+// UpdateUserRoleInBand mocks base method.
+func (m *MockUserRepository) UpdateUserRoleInBand(ctx context.Context, userID, bandID int, role string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUserRoleInBand", ctx, userID, bandID, role)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateUserRoleInBand indicates an expected call of UpdateUserRoleInBand.
+func (mr *MockUserRepositoryMockRecorder) UpdateUserRoleInBand(ctx, userID, bandID, role any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserRoleInBand", reflect.TypeOf((*MockUserRepository)(nil).UpdateUserRoleInBand), ctx, userID, bandID, role)
+}
+
 // GetAdminCountInBand mocks base method.
 func (m *MockUserRepository) GetAdminCountInBand(ctx context.Context, bandID int) (int, error) {
 	m.ctrl.T.Helper()

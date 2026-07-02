@@ -97,6 +97,8 @@ func TestMapBandError(t *testing.T) {
 		{"duplicate username -> 409", repository.ErrDuplicateUsername, http.StatusConflict, apierror.ErrUsernameTaken},
 		{"already member -> 409", service.ErrAlreadyBandMember, http.StatusConflict, apierror.ErrInvalidRequest},
 		{"last admin -> 409", service.ErrLastAdmin, http.StatusConflict, apierror.ErrInvalidRequest},
+		{"cannot demote last admin -> 409", service.ErrCannotDemoteLastAdmin, http.StatusConflict, apierror.ErrInvalidRequest},
+		{"invalid role -> 400", service.ErrInvalidRole, http.StatusBadRequest, apierror.ErrValidationFailed},
 		{"not a member -> 400", service.ErrNotBandMember, http.StatusBadRequest, apierror.ErrInvalidRequest},
 		{"band name required -> 400", service.ErrBandNameRequired, http.StatusBadRequest, apierror.ErrValidationFailed},
 		{"password required -> 400", service.ErrUserPasswordRequired, http.StatusBadRequest, apierror.ErrValidationFailed},

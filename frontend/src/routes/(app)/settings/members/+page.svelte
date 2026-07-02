@@ -57,6 +57,13 @@
                 members.splice(index, 1);
             }
         }
+        if (form?.roleSuccess && form.newRole) {
+            const index = members.findIndex((m) => m.id === form.updatedUserId);
+            if (index !== -1) {
+                members[index] = { ...members[index], role: form.newRole };
+                members = members;
+            }
+        }
     });
 </script>
 
@@ -94,6 +101,19 @@
 									</span>
                                 </div>
 
+                                <div class="flex items-center gap-1">
+                                <form method="POST" action="?/updateRole" use:enhance>
+                                    <input type="hidden" name="userId" value={member.id} />
+                                    <input type="hidden" name="role" value={member.role === 'admin' ? 'member' : 'admin'} />
+                                    <button
+                                            type="submit"
+                                            class="rounded-md px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-700"
+                                            disabled={member.role === 'admin' &&
+											members.filter((m) => m.role === 'admin').length <= 1}
+                                    >
+                                        {member.role === 'admin' ? 'Rétrograder' : 'Promouvoir admin'}
+                                    </button>
+                                </form>
                                 <form method="POST" action="?/removeMember" use:enhance>
                                     <input type="hidden" name="userId" value={member.id} />
                                     <button
@@ -118,6 +138,7 @@
                                         >
                                     </button>
                                 </form>
+                                </div>
                             </li>
                         {/each}
                     </ul>

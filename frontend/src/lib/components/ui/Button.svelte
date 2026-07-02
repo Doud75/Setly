@@ -1,6 +1,16 @@
 <script lang="ts">
     import type {Snippet} from "svelte";
 
+    type Props = {
+        type?: 'submit' | 'button' | 'reset';
+        isLoading?: boolean;
+        disabled?: boolean;
+        variant?: 'primary' | 'secondary';
+        autoWidth?: boolean;
+        onclick?: (event: MouseEvent) => void;
+        children: Snippet;
+    };
+
     let {
         type = 'submit',
         isLoading = false,
@@ -9,15 +19,7 @@
         autoWidth = false,
         onclick,
         children
-    } = $props<{
-        type?: 'submit' | 'button' | 'reset';
-        isLoading?: boolean;
-        disabled?: boolean;
-        variant?: 'primary' | 'secondary';
-        autoWidth?: boolean;
-        onclick?: (event: MouseEvent) => void;
-        children: Snippet;
-    }>();
+    }: Props = $props();
 
     const baseClasses = "flex justify-center rounded-md px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-800 disabled:cursor-not-allowed disabled:opacity-60";
 

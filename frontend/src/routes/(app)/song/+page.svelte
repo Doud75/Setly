@@ -103,6 +103,7 @@
                                         >
                                     </a>
 
+                                    {#if data.user?.role === 'admin'}
                                     <form method="POST" action="?/deleteSong" use:enhance>
                                         <input type="hidden" name="songId" value={song.id} />
                                         <button
@@ -125,6 +126,7 @@
                                             >
                                         </button>
                                     </form>
+                                    {/if}
                                 </div>
                             </li>
                         {/each}

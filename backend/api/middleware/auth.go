@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"setlist/api/apierror"
 	"setlist/api/repository"
 	"setlist/auth"
 	"strconv"
@@ -28,22 +29,22 @@ func JWTAuth(jwtSecret string, userRepo repository.UserRepository) func(http.Han
 
 			bandIDStr := r.Header.Get("X-Band-ID")
 			if bandIDStr == "" {
-				http.Error(w, "Missing X-Band-ID header", http.StatusBadRequest)
+				apierror.Write(w, apierror.InvalidRequest("En-tête X-Band-ID manquant."))
 				return
 			}
 			bandID, err := strconv.Atoi(bandIDStr)
 			if err != nil {
-				http.Error(w, "Invalid X-Band-ID header", http.StatusBadRequest)
+				apierror.Write(w, apierror.InvalidRequest("En-tête X-Band-ID invalide."))
 				return
 			}
 
 			isMember, err := userRepo.IsUserInBand(r.Context(), claimsVal.UserID, bandID)
 			if err != nil {
-				http.Error(w, "Error verifying band membership", http.StatusInternalServerError)
+				apierror.Write(w, apierror.NewServerError(apierror.ErrInternal, "Erreur lors de la vérification de l'appartenance au groupe."))
 				return
 			}
 			if !isMember {
-				http.Error(w, "User is not a member of this band", http.StatusForbidden)
+				apierror.Write(w, apierror.Forbidden("Vous n'êtes pas membre de ce groupe."))
 				return
 			}
 
@@ -79,13 +80,13 @@ func JWTAuthUserOnly(jwtSecret string) func(http.Handler) http.Handler {
 func validateJWT(w http.ResponseWriter, r *http.Request, jwtSecret string) (*auth.JWTClaims, bool) {
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
-		http.Error(w, "Missing authorization header", http.StatusUnauthorized)
+		apierror.Write(w, apierror.Unauthorized("En-tête d'autorisation manquant."))
 		return nil, false
 	}
 
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 	if tokenString == authHeader {
-		http.Error(w, "Invalid token format", http.StatusUnauthorized)
+		apierror.Write(w, apierror.Unauthorized("Format de token invalide."))
 		return nil, false
 	}
 
@@ -94,7 +95,7 @@ func validateJWT(w http.ResponseWriter, r *http.Request, jwtSecret string) (*aut
 		return []byte(jwtSecret), nil
 	}, jwt.WithValidMethods([]string{"HS256"}))
 	if err != nil || !token.Valid {
-		http.Error(w, "Invalid token", http.StatusUnauthorized)
+		apierror.Write(w, apierror.Unauthorized("Token invalide."))
 		return nil, false
 	}
 

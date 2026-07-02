@@ -85,16 +85,59 @@ test.describe('Setlist Admin Actions [As Member]', () => {
         await login(page, 'testuser', 'password123');
         const createdSetlist = await createSetlist(page, `Setlist for Member View ${Date.now()}`);
         setlistId = createdSetlist.id;
+        await page.request.post(`/api/setlist/${setlistId}/items`, {
+            data: { item_type: 'song', item_id: 1 }
+        });
         await page.close();
     });
 
-    test('should not show admin actions for a non-admin user', async ({ page }) => {
+    test('should hide delete but allow content actions for a non-admin user', async ({ page }) => {
         await login(page, 'memberuser', 'password123');
         await page.goto(`/setlist/${setlistId}`);
 
         await page.getByRole('button', { name: "Ouvrir le menu d'actions" }).click();
-        await expect(page.getByRole('menuitem', { name: 'Archiver' })).toBeHidden();
-        await expect(page.getByRole('menuitem', { name: 'Désarchiver' })).toBeHidden();
+        // Un membre peut désormais dupliquer, éditer les infos et archiver...
+        await expect(page.getByRole('menuitem', { name: 'Dupliquer' })).toBeVisible();
+        await expect(page.getByRole('menuitem', { name: 'Modifier les infos' })).toBeVisible();
+        await expect(page.getByRole('menuitem', { name: 'Archiver' })).toBeVisible();
+        // ...mais pas supprimer la setlist (réservé aux admins).
         await expect(page.getByRole('menuitem', { name: 'Supprimer' })).toBeHidden();
+    });
+
+    test('should allow a member to duplicate a setlist', async ({ page }) => {
+        await login(page, 'memberuser', 'password123');
+        await page.goto(`/setlist/${setlistId}`);
+
+        const newName = `Copie membre ${Date.now()}`;
+        await page.getByRole('button', { name: "Ouvrir le menu d'actions" }).click();
+        await page.getByRole('menuitem', { name: 'Dupliquer' }).click();
+        await expect(page.getByRole('dialog')).toBeVisible();
+        await page.getByLabel('Nouveau nom').fill(newName);
+        await page.getByRole('button', { name: 'Créer la copie' }).click();
+
+        await page.waitForURL(/\/setlist\/\d+/);
+        await expect(page).not.toHaveURL(`/setlist/${setlistId}`);
+        await expect(page.getByRole('heading', { name: newName })).toBeVisible();
+    });
+
+    test('should hide the remove-item button for a non-admin user', async ({ page }) => {
+        await login(page, 'memberuser', 'password123');
+        await page.goto(`/setlist/${setlistId}`);
+
+        // L'élément est visible pour le membre...
+        const items = page.locator('ul[data-testid="setlist-items"] > li');
+        await expect(items.first()).toBeVisible();
+        // ...mais pas le bouton pour le retirer (réservé aux admins).
+        await expect(page.getByRole('button', { name: "Supprimer l'élément" })).toHaveCount(0);
+    });
+
+    test('should hide the delete-song button for a non-admin user', async ({ page }) => {
+        await login(page, 'memberuser', 'password123');
+        await page.goto('/song');
+
+        const song = page.locator('li', { hasText: 'Song Title 1' });
+        await expect(song).toBeVisible();
+        // La suppression de chanson est réservée aux admins.
+        await expect(song.getByRole('button', { name: 'Supprimer Song Title 1' })).toHaveCount(0);
     });
 });

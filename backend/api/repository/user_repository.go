@@ -30,6 +30,7 @@ type UserRepository interface {
 	IsUserInBand(ctx context.Context, userID int, bandID int) (bool, error)
 	GetAdminCountInBand(ctx context.Context, bandID int) (int, error)
 	AddUserToBand(ctx context.Context, userID, bandID int, role string) error
+	UpdateUserRoleInBand(ctx context.Context, userID, bandID int, role string) error
 	SetDefaultBand(ctx context.Context, userID, bandID int) error
 }
 
@@ -243,6 +244,18 @@ func (r *PgUserRepository) AddUserToBand(ctx context.Context, userID, bandID int
 	query := `INSERT INTO band_users (user_id, band_id, role) VALUES ($1, $2, $3)`
 	_, err := r.DB.Exec(ctx, query, userID, bandID, role)
 	return err
+}
+
+func (r *PgUserRepository) UpdateUserRoleInBand(ctx context.Context, userID, bandID int, role string) error {
+	query := `UPDATE band_users SET role = $1 WHERE user_id = $2 AND band_id = $3`
+	cmdTag, err := r.DB.Exec(ctx, query, role, userID, bandID)
+	if err != nil {
+		return err
+	}
+	if cmdTag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
 }
 
 func (r *PgUserRepository) CreateBand(ctx context.Context, name string, ownerUserID int) (model.Band, error) {

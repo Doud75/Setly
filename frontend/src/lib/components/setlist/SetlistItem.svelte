@@ -54,6 +54,7 @@
     /></svg
     ></button
     >
+    {#if $page.data.user?.role === 'admin'}
     <form method="POST" action="?/deleteItem" use:enhance class="inline-block">
         <input type="hidden" name="itemId" value={item.id} />
         <button
@@ -75,6 +76,7 @@
         ></button
         >
     </form>
+    {/if}
 {/snippet}
 
 {#snippet notesSnippet(text: string, colorClass: string)}
