@@ -21,6 +21,8 @@ var (
 	ErrLastAdmin               = errors.New("cannot leave: user is the last admin of the band")
 	ErrBandNameRequired        = errors.New("band name cannot be empty")
 	ErrBandNotFoundOrNotMember = errors.New("band not found or user is not a member")
+	ErrInvalidRole             = errors.New("invalid role")
+	ErrCannotDemoteLastAdmin   = errors.New("cannot demote the last admin of the band")
 )
 
 type UserService struct {
@@ -235,6 +237,35 @@ func (s UserService) InviteMember(ctx context.Context, bandID int, payload Invit
 
 func (s UserService) RemoveMember(ctx context.Context, bandID int, userID int) error {
 	return s.UserRepo.RemoveUserFromBand(ctx, bandID, userID)
+}
+
+// ChangeMemberRole promeut/rétrograde un membre du groupe. Refuse un rôle inconnu et
+// empêche de rétrograder le dernier administrateur (sinon le groupe n'aurait plus d'admin).
+func (s UserService) ChangeMemberRole(ctx context.Context, bandID int, targetUserID int, newRole string) error {
+	if newRole != "admin" && newRole != "member" {
+		return ErrInvalidRole
+	}
+
+	currentRole, err := s.UserRepo.GetUserRoleInBand(ctx, targetUserID, bandID)
+	if err != nil {
+		return mapNotFound(err, ErrNotBandMember)
+	}
+
+	if currentRole == newRole {
+		return nil
+	}
+
+	if currentRole == "admin" && newRole == "member" {
+		count, err := s.UserRepo.GetAdminCountInBand(ctx, bandID)
+		if err != nil {
+			return err
+		}
+		if count <= 1 {
+			return ErrCannotDemoteLastAdmin
+		}
+	}
+
+	return s.UserRepo.UpdateUserRoleInBand(ctx, targetUserID, bandID, newRole)
 }
 
 func (s UserService) LeaveBand(ctx context.Context, userID int, bandID int) error {

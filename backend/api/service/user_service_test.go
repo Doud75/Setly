@@ -439,6 +439,96 @@ func TestUserService_InviteMember_Errors(t *testing.T) {
 	})
 }
 
+func TestUserService_ChangeMemberRole(t *testing.T) {
+	ctx := context.Background()
+	const targetUserID, bandID = 10, 5
+
+	t.Run("PromoteMemberToAdmin_Success", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockUserRepo := mocks.NewMockUserRepository(ctrl)
+		svc := UserService{UserRepo: mockUserRepo}
+
+		mockUserRepo.EXPECT().GetUserRoleInBand(ctx, targetUserID, bandID).Return("member", nil)
+		mockUserRepo.EXPECT().UpdateUserRoleInBand(ctx, targetUserID, bandID, "admin").Return(nil)
+
+		if err := svc.ChangeMemberRole(ctx, bandID, targetUserID, "admin"); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("DemoteAdminWithCoAdmin_Success", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockUserRepo := mocks.NewMockUserRepository(ctrl)
+		svc := UserService{UserRepo: mockUserRepo}
+
+		mockUserRepo.EXPECT().GetUserRoleInBand(ctx, targetUserID, bandID).Return("admin", nil)
+		mockUserRepo.EXPECT().GetAdminCountInBand(ctx, bandID).Return(2, nil)
+		mockUserRepo.EXPECT().UpdateUserRoleInBand(ctx, targetUserID, bandID, "member").Return(nil)
+
+		if err := svc.ChangeMemberRole(ctx, bandID, targetUserID, "member"); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("DemoteLastAdmin_Blocked", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockUserRepo := mocks.NewMockUserRepository(ctrl)
+		svc := UserService{UserRepo: mockUserRepo}
+
+		mockUserRepo.EXPECT().GetUserRoleInBand(ctx, targetUserID, bandID).Return("admin", nil)
+		mockUserRepo.EXPECT().GetAdminCountInBand(ctx, bandID).Return(1, nil)
+
+		err := svc.ChangeMemberRole(ctx, bandID, targetUserID, "member")
+		if !errors.Is(err, ErrCannotDemoteLastAdmin) {
+			t.Errorf("expected ErrCannotDemoteLastAdmin, got %v", err)
+		}
+	})
+
+	t.Run("InvalidRole_Rejected", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockUserRepo := mocks.NewMockUserRepository(ctrl)
+		svc := UserService{UserRepo: mockUserRepo}
+
+		// aucun appel repo attendu : le rôle est rejeté avant.
+		err := svc.ChangeMemberRole(ctx, bandID, targetUserID, "superadmin")
+		if !errors.Is(err, ErrInvalidRole) {
+			t.Errorf("expected ErrInvalidRole, got %v", err)
+		}
+	})
+
+	t.Run("NotMember_Error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockUserRepo := mocks.NewMockUserRepository(ctrl)
+		svc := UserService{UserRepo: mockUserRepo}
+
+		mockUserRepo.EXPECT().GetUserRoleInBand(ctx, targetUserID, bandID).Return("", pgx.ErrNoRows)
+
+		err := svc.ChangeMemberRole(ctx, bandID, targetUserID, "admin")
+		if !errors.Is(err, ErrNotBandMember) {
+			t.Errorf("expected ErrNotBandMember, got %v", err)
+		}
+	})
+
+	t.Run("SameRole_NoOp", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockUserRepo := mocks.NewMockUserRepository(ctrl)
+		svc := UserService{UserRepo: mockUserRepo}
+
+		// déjà admin : pas d'UPDATE attendu.
+		mockUserRepo.EXPECT().GetUserRoleInBand(ctx, targetUserID, bandID).Return("admin", nil)
+
+		if err := svc.ChangeMemberRole(ctx, bandID, targetUserID, "admin"); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+}
+
 func TestUserService_SetDefaultBand_NotMember(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

@@ -78,6 +78,7 @@ func main() {
 	mux.Handle("POST /api/bands", authMiddlewareUserOnly(handler.Wrap(bandHandler.CreateBand)))
 	mux.Handle("GET /api/bands/{bandId}/members", authMiddleware(handler.Wrap(bandHandler.GetMembers)))
 	mux.Handle("POST /api/bands/{bandId}/members", authMiddleware(adminMiddleware(handler.Wrap(bandHandler.InviteMember))))
+	mux.Handle("PUT /api/bands/{bandId}/members/{userId}/role", authMiddleware(adminMiddleware(handler.Wrap(bandHandler.UpdateMemberRole))))
 	mux.Handle("DELETE /api/bands/{bandId}/members/{userId}", authMiddleware(adminMiddleware(handler.Wrap(bandHandler.RemoveMember))))
 	mux.Handle("DELETE /api/bands/{bandId}/members/me", authMiddlewareUserOnly(handler.Wrap(bandHandler.LeaveBand)))
 
@@ -88,20 +89,20 @@ func main() {
 	mux.Handle("POST /api/setlist", authMiddleware(handler.Wrap(setlistHandler.CreateSetlist)))
 	mux.Handle("GET /api/setlist", authMiddleware(handler.Wrap(setlistHandler.GetSetlists)))
 	mux.Handle("GET /api/setlist/{id}", authMiddleware(handler.Wrap(setlistHandler.GetSetlistDetails)))
-	mux.Handle("PUT /api/setlist/{id}", authMiddleware(adminMiddleware(handler.Wrap(setlistHandler.UpdateSetlist))))
+	mux.Handle("PUT /api/setlist/{id}", authMiddleware(handler.Wrap(setlistHandler.UpdateSetlist)))
 	mux.Handle("DELETE /api/setlist/{id}", authMiddleware(adminMiddleware(handler.Wrap(setlistHandler.DeleteSetlist))))
 
-	mux.Handle("POST /api/setlist/{id}/duplicate", authMiddleware(adminMiddleware(handler.Wrap(setlistHandler.DuplicateSetlist))))
+	mux.Handle("POST /api/setlist/{id}/duplicate", authMiddleware(handler.Wrap(setlistHandler.DuplicateSetlist)))
 	mux.Handle("POST /api/setlist/{id}/items", authMiddleware(handler.Wrap(setlistHandler.AddItem)))
 	mux.Handle("PUT /api/setlist/{id}/items/order", authMiddleware(handler.Wrap(setlistHandler.UpdateItemOrder)))
 	mux.Handle("PUT /api/setlist/item/{itemId}", authMiddleware(handler.Wrap(setlistHandler.UpdateItem)))
-	mux.Handle("DELETE /api/setlist/item/{itemId}", authMiddleware(handler.Wrap(setlistHandler.DeleteItem)))
+	mux.Handle("DELETE /api/setlist/item/{itemId}", authMiddleware(adminMiddleware(handler.Wrap(setlistHandler.DeleteItem))))
 
 	mux.Handle("POST /api/song", authMiddleware(handler.Wrap(songHandler.CreateSong)))
 	mux.Handle("GET /api/song", authMiddleware(handler.Wrap(songHandler.GetSongs)))
 	mux.Handle("GET /api/song/{id}", authMiddleware(handler.Wrap(songHandler.GetSong)))
 	mux.Handle("PUT /api/song/{id}", authMiddleware(handler.Wrap(songHandler.UpdateSong)))
-	mux.Handle("DELETE /api/song/{id}", authMiddleware(handler.Wrap(songHandler.DeleteSong)))
+	mux.Handle("DELETE /api/song/{id}", authMiddleware(adminMiddleware(handler.Wrap(songHandler.DeleteSong))))
 
 	mux.Handle("POST /api/interlude", authMiddleware(handler.Wrap(interludeHandler.CreateInterlude)))
 	mux.Handle("GET /api/interlude", authMiddleware(handler.Wrap(interludeHandler.GetInterludes)))
