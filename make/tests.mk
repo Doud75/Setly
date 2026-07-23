@@ -25,11 +25,11 @@ test-backend-cover:
 	@echo "✅ Backend Unit Tests Coverage finished. Report available in backend/coverage.html"
 
 govulncheck:
-	@echo "--- Running govulncheck inside Docker (golang:1.25.11-bookworm) ---"
+	@echo "--- Running govulncheck inside Docker (golang:1.25.12-bookworm) ---"
 	@docker run --rm \
 		-v $(CURDIR)/backend:/app \
 		-w /app \
-		golang:1.25.11-bookworm \
+		golang:1.25.12-bookworm \
 		sh -c "go install golang.org/x/vuln/cmd/govulncheck@latest && govulncheck ./..."
 	@echo "✅ govulncheck finished."
 
