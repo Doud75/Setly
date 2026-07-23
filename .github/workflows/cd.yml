@@ -116,6 +116,10 @@ jobs:
             echo "🔄 Restarting services..."
             docker compose -f docker-compose.yml -f /home/deploy/Setly/docker-compose.prod.yml up -d --remove-orphans
 
+            echo "🧹 Pruning old images & build cache..."
+            docker image prune -af --filter "until=168h"
+            docker builder prune -af --filter "until=168h"
+
             echo "🏥 Checking service health..."
             sleep 10
             docker compose -f docker-compose.yml -f /home/deploy/Setly/docker-compose.prod.yml ps
