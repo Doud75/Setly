@@ -67,3 +67,9 @@ func (r *PgInvitationRepository) Delete(ctx context.Context, token string) error
 	}
 	return nil
 }
+
+func (r *PgInvitationRepository) CleanExpiredInvitations(ctx context.Context) error {
+	query := `DELETE FROM band_invitations WHERE expires_at < NOW()`
+	_, err := r.DB.Exec(ctx, query)
+	return err
+}

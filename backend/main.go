@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"setlist/cache"
 	"setlist/config"
 	"setlist/db"
+	"time"
 )
 
 func main() {
@@ -112,6 +114,24 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"status": "ok"}`))
 	})
+
+	go func() {
+		runCleanup := func() {
+			ctx := context.Background()
+			if err := refreshTokenRepo.CleanExpiredTokens(ctx); err != nil {
+				log.Printf("[cleanup] refresh tokens: %v", err)
+			}
+			if err := invitationRepo.CleanExpiredInvitations(ctx); err != nil {
+				log.Printf("[cleanup] invitations: %v", err)
+			}
+		}
+		runCleanup()
+		ticker := time.NewTicker(24 * time.Hour)
+		defer ticker.Stop()
+		for range ticker.C {
+			runCleanup()
+		}
+	}()
 
 	port := "8089"
 	address := fmt.Sprintf("0.0.0.0:%s", port)
