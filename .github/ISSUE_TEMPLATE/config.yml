@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Question ou discussion
+    url: https://github.com/Doud75/Setly/discussions
+    about: Pour une question d'usage, une demande d'aide à l'installation ou une idée à discuter avant d'ouvrir une issue.
+  - name: 🔒 Signaler une faille de sécurité
+    url: https://github.com/Doud75/Setly/security/advisories/new
+    about: N'ouvre jamais d'issue publique pour une vulnérabilité — utilise le signalement privé.
+  - name: 📖 Guide de contribution
+    url: https://github.com/Doud75/Setly/blob/main/CONTRIBUTING.md
+    about: Comment installer le projet, lancer les tests et ouvrir une Pull Request.

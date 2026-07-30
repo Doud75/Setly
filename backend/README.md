@@ -1,6 +1,6 @@
-# Backend - Setlist PWA API
+# Backend — API Setly
 
-Ce service est l'API en Go pour l'application Setlist PWA. Il gère l'authentification des utilisateurs, la gestion des groupes (bands), et toutes les données relatives aux chansons et aux setlists.
+Ce service est l'API en Go de l'application Setly. Il gère l'authentification des utilisateurs, la gestion des groupes (bands), et toutes les données relatives aux chansons et aux setlists.
 
 ## Stack Technique
 
@@ -28,7 +28,7 @@ Avant de commencer, assurez-vous d'avoir installé :
 
 ## Démarrage Rapide (avec Docker)
 
-Toutes les commandes sont à lancer depuis la **racine du projet** (`setlist-pwa/`), pas depuis le dossier `backend`.
+Toutes les commandes sont à lancer depuis la **racine du dépôt**, pas depuis le dossier `backend`.
 
 ### 1. Configuration (Première fois uniquement)
 

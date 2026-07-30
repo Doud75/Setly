@@ -1,0 +1,79 @@
+name: ✨ Proposer une fonctionnalité
+description: Suggérer une idée ou une amélioration
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci pour ta proposition ! Avant de te lancer dans du code, cette issue permet
+        de valider la direction — ça évite de développer quelque chose qui ne serait pas fusionné.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Vérifications préalables
+      options:
+        - label: J'ai cherché dans les issues existantes et cette idée n'a pas déjà été proposée
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Quel problème cette fonctionnalité résout-elle ?
+      description: |
+        Décris la gêne concrète plutôt que la solution. C'est le point le plus important :
+        un problème bien posé mène souvent à une meilleure solution que celle envisagée au départ.
+      placeholder: |
+        En concert, je dois retrouver rapidement le morceau suivant sur mon téléphone,
+        mais la liste défile et je perds ma place dès que l'écran se verrouille.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solution proposée
+      description: Comment imagines-tu que ça fonctionne ?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives envisagées
+      description: D'autres approches auxquelles tu as pensé, et pourquoi tu les as écartées.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Partie concernée
+      options:
+        - Je ne sais pas
+        - Frontend (SvelteKit)
+        - Backend (API Go)
+        - Base de données / migrations
+        - Docker / environnement
+        - PWA / mode hors-ligne
+        - Export PDF
+        - Documentation
+    validations:
+      required: true
+
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Souhaites-tu l'implémenter toi-même ?
+      description: Aucune obligation — proposer une idée est déjà une contribution.
+      options:
+        - Non, je propose simplement l'idée
+        - Oui, si la proposition est validée
+        - Oui, mais j'aurais besoin d'aide pour démarrer
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte supplémentaire
+      description: Maquettes, captures d'écran, exemples dans d'autres applications…

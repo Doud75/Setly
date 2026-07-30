@@ -1,1 +1,6 @@
-@Doud75
+# Propriétaires du code — une review leur est automatiquement demandée sur chaque PR.
+# Chaque ligne associe un motif de chemin (syntaxe .gitignore) à un ou plusieurs owners.
+# La dernière règle qui correspond à un fichier l'emporte.
+
+# Par défaut, tout le dépôt.
+* @Doud75

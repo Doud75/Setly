@@ -1,6 +1,6 @@
-# Frontend - Setlist PWA
+# Frontend — Setly
 
-Ce service est le frontend en SvelteKit pour l'application Setlist PWA. Il fournit l'interface utilisateur pour interagir avec l'API backend et est conçu pour être une Progressive Web App (PWA) installable et utilisable hors ligne.
+Ce service est le frontend en SvelteKit de l'application Setly. Il fournit l'interface utilisateur pour interagir avec l'API backend et est conçu pour être une Progressive Web App (PWA) installable et utilisable hors ligne.
 
 ## Stack Technique
 
@@ -23,7 +23,7 @@ Ce service est le frontend en SvelteKit pour l'application Setlist PWA. Il fourn
 
 ## Démarrage Rapide
 
-Toutes les commandes sont à lancer depuis la **racine du projet** (`setlist-pwa/`), pas depuis le dossier `frontend`.
+Toutes les commandes sont à lancer depuis la **racine du dépôt**, pas depuis le dossier `frontend`.
 
 ### 1. Configuration (Première fois uniquement)
 

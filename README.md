@@ -1,6 +1,12 @@
-# Setlist PWA 🎸
+# Setly 🎸
 
-Bienvenue sur le projet **Lister** ! Cette application est une *Progressive Web App* conçue pour aider les groupes de musique à créer, gérer et partager leurs setlists.
+[![CI](https://github.com/Doud75/Setly/actions/workflows/ci.yml/badge.svg)](https://github.com/Doud75/Setly/actions/workflows/ci.yml)
+[![Licence : MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+[![PRs bienvenues](https://img.shields.io/badge/PRs-bienvenues-brightgreen.svg)](CONTRIBUTING.md)
+
+Bienvenue sur **Setly** ! Cette application est une *Progressive Web App* conçue pour aider les groupes de musique à créer, gérer et partager leurs setlists.
+
+📖 [Contribuer](CONTRIBUTING.md) · [Architecture](ARCHITECTURE.md) · [Sécurité](SECURITY.md) · [Changelog](CHANGELOG.md)
 
 ## ✨ Fonctionnalités
 
@@ -59,8 +65,8 @@ Commencez par cloner le projet et configurer vos variables d'environnement.
 
 ```bash
 # Clonez le dépôt
-git clone <URL_DU_REPO>
-cd <NOM_DU_REPO>
+git clone https://github.com/Doud75/Setly.git
+cd Setly
 
 # Copiez le fichier d'environnement d'exemple
 cp .env.example .env
@@ -126,21 +132,18 @@ Vous pouvez également lancer des sous-ensembles de tests (ex: `make test-song-l
 
 ## 🤝 Comment Contribuer
 
-Ce projet est ouvert aux contributions ! Pour garantir la qualité et la cohérence du code, veuillez suivre ces quelques règles :
+Ce projet est ouvert aux contributions ! Le guide complet — workflow de fork, convention de commits, exécution des tests, migrations, ce que fait la CI sur votre PR — se trouve dans **[CONTRIBUTING.md](CONTRIBUTING.md)**.
 
-1.  **Ne jamais pusher sur `main`** : La branche `main` est protégée. Toutes les modifications doivent passer par une Pull Request.
+En résumé : la branche `main` est protégée, tout passe par une Pull Request depuis un fork, et `make test-all` doit passer avant de l'ouvrir.
 
-2.  **Workflow de contribution** :
-    *   **Créez une branche** : Partez de la branche `main` la plus à jour. Choisissez un nom de branche explicite (ex: `feat/add-dark-mode` ou `fix/login-bug`).
-        ```bash
-        git switch main
-        git pull origin main
-        git switch -c feat/ma-nouvelle-fonctionnalite
-        ```
-    *   **Développez** : Codez votre fonctionnalité ou votre correctif.
-    *   **Testez** : Assurez-vous que vos modifications ne cassent rien en lançant les tests (`make test-all`). Idéalement, ajoutez de nouveaux tests pour couvrir votre code.
-    *   **Ouvrez une Pull Request (PR)** : Poussez votre branche sur le dépôt distant et ouvrez une PR vers `main`. Décrivez clairement vos changements.
-    *   **Revue de code** : Un mainteneur examinera votre code. Une fois la PR approuvée et les tests de l'intégration continue (CI) au vert, elle sera fusionnée.
+Pour comprendre le fonctionnement interne du projet avant de vous lancer, lisez **[ARCHITECTURE.md](ARCHITECTURE.md)**.
 
-3.  **Standards de code** :
-    *   Le code est formaté avec **Prettier** et vérifié avec **ESLint**. Avant de commiter, vous pouvez lancer `npm run lint` et `npm run format` dans le dossier `frontend` pour vous assurer que tout est en ordre.
+En participant, vous acceptez de respecter notre [code de conduite](CODE_OF_CONDUCT.md).
+
+## 🔒 Sécurité
+
+Pour signaler une faille, n'ouvrez pas d'issue publique : suivez la procédure décrite dans [SECURITY.md](SECURITY.md).
+
+## 📄 Licence
+
+Ce projet est distribué sous licence [MIT](LICENSE).

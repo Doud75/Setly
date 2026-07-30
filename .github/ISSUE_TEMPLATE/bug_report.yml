@@ -1,0 +1,110 @@
+name: 🐛 Signaler un bug
+description: Quelque chose ne fonctionne pas comme prévu
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de prendre le temps de signaler ce bug !
+
+        ⚠️ **S'il s'agit d'une faille de sécurité, n'ouvre pas d'issue publique.**
+        Suis la procédure décrite dans [SECURITY.md](https://github.com/Doud75/Setly/blob/main/SECURITY.md).
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Vérifications préalables
+      options:
+        - label: J'ai cherché dans les issues existantes et ce bug n'a pas déjà été signalé
+          required: true
+        - label: Ce n'est pas une faille de sécurité (sinon, voir SECURITY.md)
+          required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description du problème
+      description: Décris clairement et simplement ce qui ne va pas.
+      placeholder: Quand je duplique une setlist, les interludes ne sont pas repris.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Étapes de reproduction
+      description: Les étapes exactes pour reproduire le problème.
+      placeholder: |
+        1. Se connecter et sélectionner un groupe
+        2. Aller sur une setlist contenant au moins un interlude
+        3. Cliquer sur « Dupliquer »
+        4. Ouvrir la copie créée
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportement attendu
+      description: Que devrait-il se passer à la place ?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportement observé
+      description: Que se passe-t-il réellement ? Inclus le message d'erreur exact s'il y en a un.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment-type
+    attributes:
+      label: Où as-tu rencontré le bug ?
+      options:
+        - En développement local (make up)
+        - En développement local (hors Docker)
+        - Sur l'application déployée
+        - Dans les tests (CI ou local)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Partie concernée
+      description: Si tu le sais. Sinon, laisse « Je ne sais pas ».
+      options:
+        - Je ne sais pas
+        - Frontend (SvelteKit)
+        - Backend (API Go)
+        - Base de données / migrations
+        - Docker / environnement
+        - PWA / mode hors-ligne
+        - Export PDF
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Navigateur et système d'exploitation
+      description: Utile pour tout ce qui touche au frontend ou à la PWA.
+      placeholder: "Firefox 142 sur macOS 15 / Chrome Android 16"
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs et captures d'écran
+      description: |
+        Console du navigateur, sortie de `make logs`, capture d'écran…
+        Le contenu collé ici est automatiquement formaté en bloc de code.
+      render: shell
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte supplémentaire
+      description: Tout ce qui pourrait aider — piste envisagée, contournement trouvé, etc.
