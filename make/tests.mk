@@ -18,6 +18,21 @@ test-backend:
 	@cd backend && go test -v ./...
 	@echo "✅ Backend Unit Tests finished."
 
+test-backend-integration:
+	@echo "--- Starting test database ---"
+	@docker compose -f docker-compose.test.yml --env-file .env.test up -d --wait db_test
+	@echo "--- Running migrations on test database ---"
+	@docker compose -f docker-compose.test.yml --env-file .env.test run --rm --no-deps --build backend_test \
+		/bin/sh -c '/go/bin/migrate -path db/migrations -database $$DATABASE_URL up'
+	@echo "--- Running Backend Integration Tests ---"
+	@set -a; . ./.env.test; set +a; \
+	cd backend && TEST_DATABASE_URL="postgres://$$POSTGRES_USER:$$POSTGRES_PASSWORD@localhost:5434/$$POSTGRES_DB?sslmode=disable" \
+		go test -race -count=1 -v ./api/repository/...; \
+	status=$$?; \
+	cd .. && docker compose -f docker-compose.test.yml --env-file .env.test down -v --remove-orphans > /dev/null; \
+	exit $$status
+	@echo "✅ Backend Integration Tests finished."
+
 test-backend-cover:
 	@echo "--- Running Backend Unit Tests with Coverage ---"
 	@cd backend && go test -v -coverprofile=coverage.out ./...
@@ -284,7 +299,7 @@ run-playwright-offline:
 	@cd frontend && npx playwright test tests/offline/
 
 # --- Déclaration .PHONY pour toutes les cibles ---
-.PHONY: test-all test-unit test-unit-watch test-backend test-backend-cover govulncheck \
+.PHONY: test-all test-unit test-unit-watch test-backend test-backend-cover test-backend-integration govulncheck \
 		test test-setlist test-song test-settings test-interlude \
 		test-multi-group test-cross-band test-duplicate-band test-dashboard test-leave-band test-default-band \
 		test-auth test-auth-login test-auth-signup \

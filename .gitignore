@@ -65,6 +65,7 @@ frontend/test-results
 test-results
 
 CLAUDE.md
+NOTES-BACKLOG.md
 
 k6/*
 **/scripts/*

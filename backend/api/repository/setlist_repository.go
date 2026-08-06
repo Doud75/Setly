@@ -159,31 +159,41 @@ func (r PgSetlistRepository) GetSetlistItemsBySetlistID(ctx context.Context, set
 }
 
 func (r PgSetlistRepository) AddItemToSetlist(ctx context.Context, item model.SetlistItem) (model.SetlistItem, error) {
-	var maxPosition *int32
-	posQuery := `SELECT MAX(position) FROM setlist_items WHERE setlist_id = $1`
-	r.DB.QueryRow(ctx, posQuery, item.SetlistID).Scan(&maxPosition)
-
-	nextPos := 0
-	if maxPosition != nil {
-		nextPos = int(*maxPosition) + 1
+	tx, err := r.DB.Begin(ctx)
+	if err != nil {
+		return item, err
 	}
-	item.Position = nextPos
+	defer tx.Rollback(ctx)
+
+	// Verrouille la setlist parente : deux ajouts simultanés sur la même setlist
+	// sont sérialisés et ne peuvent plus calculer la même position.
+	var lockedSetlistID int
+	lockQuery := `SELECT id FROM setlists WHERE id = $1 FOR UPDATE`
+	if err := tx.QueryRow(ctx, lockQuery, item.SetlistID).Scan(&lockedSetlistID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return item, sql.ErrNoRows
+		}
+		return item, err
+	}
 
 	insertQuery := `INSERT INTO setlist_items (setlist_id, position, item_type, song_id, interlude_id, notes, transition_duration_seconds)
-					VALUES ($1, $2, $3, $4, $5, $6, $7)
-					RETURNING id`
+					SELECT $1::int, COALESCE(MAX(position), -1) + 1, $2::varchar, $3::int, $4::int, $5::text, $6::int
+					FROM setlist_items
+					WHERE setlist_id = $1
+					RETURNING id, position`
 
-	err := r.DB.QueryRow(ctx, insertQuery,
+	if err := tx.QueryRow(ctx, insertQuery,
 		item.SetlistID,
-		item.Position,
 		item.ItemType,
 		item.SongID,
 		item.InterludeID,
 		item.Notes,
 		item.TransitionDurationSeconds,
-	).Scan(&item.ID)
+	).Scan(&item.ID, &item.Position); err != nil {
+		return item, err
+	}
 
-	return item, err
+	return item, tx.Commit(ctx)
 }
 
 func (r PgSetlistRepository) UpdateItemOrder(ctx context.Context, setlistID int, itemIDs []int) error {
