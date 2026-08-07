@@ -2,12 +2,12 @@
 
 ## Versions supportées
 
-Le projet est déployé en continu depuis la branche `main`. Seule la version actuellement déployée reçoit des correctifs de sécurité ; il n'y a pas de branches de maintenance pour les versions antérieures.
+Le projet est déployé à partir de tags de version (`vX.Y.Z`). Seule la dernière version publiée reçoit des correctifs de sécurité ; il n'y a pas de branches de maintenance pour les versions antérieures. Un correctif est diffusé par la publication d'une nouvelle version.
 
 | Version | Supportée |
 |---|---|
-| `main` (dernière version déployée) | ✅ |
-| Tout commit antérieur | ❌ |
+| Dernière version publiée (`vX.Y.Z`) | ✅ |
+| Versions antérieures | ❌ |
 
 ## Signaler une vulnérabilité
 

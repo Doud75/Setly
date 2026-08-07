@@ -1,10 +1,10 @@
 services:
   backend:
-    image: ghcr.io/doud75/setly-backend:latest
+    image: ghcr.io/doud75/setly-backend:${IMAGE_TAG:-latest}
     build: null
 
   frontend:
-    image: ghcr.io/doud75/setly-frontend:latest
+    image: ghcr.io/doud75/setly-frontend:${IMAGE_TAG:-latest}
     build: null
     environment:
       - ADDRESS_HEADER=X-Forwarded-For

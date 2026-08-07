@@ -27,7 +27,7 @@ Précise les commandes lancées et, pour un changement visuel, joins une capture
 - [ ] `cd frontend && npm run lint` passe
 - [ ] J'ai ajouté ou mis à jour les tests couvrant mon changement
 - [ ] La documentation est à jour si mon changement le nécessite (README, `ARCHITECTURE.md`, `CONTRIBUTING.md`)
-- [ ] `CHANGELOG.md` est mis à jour sous `[Unreleased]` si le changement est visible par les utilisateurs
+- [ ] `CHANGELOG.md` est mis à jour sous `[Non publié]` si le changement est visible par les utilisateurs
 
 ### Si cette PR touche à la base de données
 
