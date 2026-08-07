@@ -154,4 +154,6 @@ Les tests E2E tournent contre un environnement complet et isolé décrit par `do
 ## Déploiement
 
 - **CI** (`.github/workflows/ci.yml`) — sur chaque PR : scans de sécurité, build, lint, tests unitaires et E2E.
-- **CD** (`.github/workflows/cd.yml`) — sur chaque push vers `main` : construction et publication des images Docker sur GitHub Container Registry, puis déploiement par SSH sur le VPS (migrations, `docker compose up`, vérification de santé).
+- **CD** (`.github/workflows/cd.yml`) — sur chaque tag de version `vX.Y.Z` : construction et publication des images Docker sur GitHub Container Registry, taguées en semver (`X.Y.Z`, `X.Y`, `latest`), puis déploiement par SSH sur le VPS (migrations, `docker compose up`, vérification de santé).
+
+Un merge sur `main` ne déploie rien : le déploiement est déclenché par la publication d'une version, via `make release-patch|minor|major` (voir [CONTRIBUTING.md](CONTRIBUTING.md#publier-une-version-mainteneurs)). Sur le VPS, le dépôt est positionné sur le tag déployé (`git checkout refs/tags/vX.Y.Z`) avant de jouer les migrations : celles-ci proviennent donc exactement du commit à partir duquel les images ont été construites. Le tag d'image déployé est passé au compose de production via `IMAGE_TAG`, ce qui rend un retour arrière possible en rejouant `cd.yml` (`workflow_dispatch`) sur un tag antérieur.

@@ -69,3 +69,5 @@ NOTES-BACKLOG.md
 
 k6/*
 **/scripts/*
+# Le script de release fait partie du dépôt : il est appelé par make release-*
+!/scripts/release.sh

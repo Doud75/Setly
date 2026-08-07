@@ -2,7 +2,8 @@ name: CD - Build, Push & Deploy
 
 on:
   push:
-    branches: [ main ]
+    tags: [ 'v*.*.*' ]
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -20,9 +21,19 @@ jobs:
       packages: write
 
     outputs:
-      image_tag: ${{ steps.meta.outputs.version }}
+      version: ${{ steps.meta-backend.outputs.version }}
 
     steps:
+      - name: Vérifier que la ref est un tag de version
+        run: |
+          case "${{ github.ref }}" in
+            refs/tags/v*.*.*)
+              echo "Déploiement de ${{ github.ref_name }}" ;;
+            *)
+              echo "::error::Ce workflow doit être lancé sur un tag de version vX.Y.Z (ref reçue : ${{ github.ref }})"
+              exit 1 ;;
+          esac
+
       - name: Checkout code
         uses: actions/checkout@v6
 
@@ -36,15 +47,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract Docker metadata (tags & labels)
-        id: meta
+      - name: Extract Docker metadata (backend)
+        id: meta-backend
         uses: docker/metadata-action@v6
         with:
-          images: |
-            ${{ env.IMAGE_BACKEND }}
-            ${{ env.IMAGE_FRONTEND }}
+          images: ${{ env.IMAGE_BACKEND }}
           tags: |
-            type=sha,prefix=sha-
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      - name: Extract Docker metadata (frontend)
+        id: meta-frontend
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE_FRONTEND }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest
 
       - name: Build & Push backend image
@@ -52,24 +72,20 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: |
-            ${{ env.IMAGE_BACKEND }}:latest
-            ${{ env.IMAGE_BACKEND }}:sha-${{ github.sha }}
+          tags: ${{ steps.meta-backend.outputs.tags }}
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
-          labels: ${{ steps.meta.outputs.labels }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
 
       - name: Build & Push frontend image
         uses: docker/build-push-action@v7
         with:
           context: ./frontend
           push: true
-          tags: |
-            ${{ env.IMAGE_FRONTEND }}:latest
-            ${{ env.IMAGE_FRONTEND }}:sha-${{ github.sha }}
+          tags: ${{ steps.meta-frontend.outputs.tags }}
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
-          labels: ${{ steps.meta.outputs.labels }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
 
   deploy:
     name: Deploy to Production
@@ -96,21 +112,23 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
-          IMAGE_TAG: sha-${{ github.sha }}
         run: |
           ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" << 'EOF'
             set -e
 
-            echo "🚀 [$(date)] Starting deployment (sha: ${{ github.sha }})"
+            export IMAGE_TAG='${{ needs.build-and-push.outputs.version }}'
+
+            echo "🚀 [$(date)] Starting deployment of ${{ github.ref_name }} (image tag: $IMAGE_TAG)"
             cd /home/deploy/Setly
 
-            echo "� Pulling latest code (for migrations)..."
-            git pull
+            echo "📥 Checking out tag ${{ github.ref_name }} (migrations & compose files)..."
+            git fetch --tags --force
+            git checkout --force "refs/tags/${{ github.ref_name }}"
 
             echo "🗄️ Running database migrations..."
             docker compose up --build migrator
 
-            echo "�📦 Pulling latest Docker images..."
+            echo "📦 Pulling Docker images ($IMAGE_TAG)..."
             docker compose -f docker-compose.yml -f /home/deploy/Setly/docker-compose.prod.yml pull
 
             echo "🔄 Restarting services..."
@@ -124,7 +142,7 @@ jobs:
             sleep 10
             docker compose -f docker-compose.yml -f /home/deploy/Setly/docker-compose.prod.yml ps
 
-            echo "✅ [$(date)] Deployment completed successfully!"
+            echo "✅ [$(date)] Deployment of ${{ github.ref_name }} completed successfully!"
           EOF
 
       - name: Verify deployment
@@ -134,6 +152,7 @@ jobs:
           SSH_PORT: ${{ secrets.SSH_PORT }}
         run: |
           ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" << 'EOF'
+            export IMAGE_TAG='${{ needs.build-and-push.outputs.version }}'
             cd /home/deploy/Setly
             echo "--- Recent backend logs ---"
             docker compose -f docker-compose.yml -f /home/deploy/Setly/docker-compose.prod.yml logs backend --tail=20

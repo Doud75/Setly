@@ -12,6 +12,28 @@ Les catégories utilisées sont : `Ajouté`, `Modifié`, `Déprécié`, `Retiré
 
 ## [Non publié]
 
+### Ajouté
+
+- Cibles `make release-patch`, `make release-minor` et `make release-major` : elles datent la section
+  `[Non publié]` de ce fichier, poussent le commit de release sur `main` puis le tag `vX.Y.Z`, ce qui
+  déclenche le déploiement. `make release-dry-run` montre le résultat sans rien modifier.
+
+### Modifié
+
+- Le déploiement en production se déclenche désormais sur un tag de version `vX.Y.Z` (ou une exécution
+  manuelle du workflow sur un tag) au lieu de chaque push sur `main`. Fusionner une Pull Request ne
+  déploie plus ([#101](https://github.com/Doud75/Setly/issues/101)).
+- Les images publiées sur GitHub Container Registry portent le tag semver de la version (`X.Y.Z` et
+  `X.Y`) en plus de `latest`, et c'est ce tag qui est déployé — un retour arrière consiste à rejouer
+  le workflow sur un tag antérieur.
+
+### Corrigé
+
+- Les migrations jouées sur le VPS provenaient de la tête de `main` (`git pull`) et non du commit à
+  partir duquel les images avaient été construites : un merge survenant entre le build et le
+  déploiement appliquait les migrations d'un autre commit que le code déployé. Le VPS se positionne
+  maintenant sur le tag déployé.
+
 ## [0.1.0] - 2026-08-06
 
 Première release publique, à l'ouverture du projet en open source.
