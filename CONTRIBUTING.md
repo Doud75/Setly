@@ -7,7 +7,7 @@ Ce document décrit comment travailler sur le projet. Si quelque chose n'y est p
 ## Sommaire
 
 - [Code de conduite](#code-de-conduite)
-- [Signaler un bug ou proposer une fonctionnalité](#signaler-un-bug-ou-proposer-une-fonctionnalité)
+- [Signaler un bug, proposer une fonctionnalité ou une évolution design](#signaler-un-bug-proposer-une-fonctionnalité-ou-une-évolution-design)
 - [Mettre en place l'environnement](#mettre-en-place-lenvironnement)
 - [Workflow de contribution](#workflow-de-contribution)
 - [Convention de commits](#convention-de-commits)
@@ -27,9 +27,11 @@ Pour signaler une **faille de sécurité**, n'ouvre pas d'issue publique : suis 
 
 ---
 
-## Signaler un bug ou proposer une fonctionnalité
+## Signaler un bug, proposer une fonctionnalité ou une évolution design
 
-Passe par les [issues GitHub](https://github.com/Doud75/Setly/issues). Deux formulaires sont proposés — un pour les bugs, un pour les propositions de fonctionnalité — et ils te guident sur les informations à fournir.
+Passe par les [issues GitHub](https://github.com/Doud75/Setly/issues). Trois formulaires sont proposés — un pour les bugs, un pour les propositions de fonctionnalité, un pour le design et l'interface — et ils te guident sur les informations à fournir.
+
+Le formulaire **🎨 Design / UI** couvre tout ce qui touche au visuel et à l'expérience : incohérence de style, écran mal adapté au mobile, composant à harmoniser, accessibilité, mode sombre. Les captures d'écran et les maquettes (avant / après) y valent mieux qu'une longue description.
 
 Avant d'ouvrir une issue, vérifie rapidement qu'elle n'existe pas déjà. Pour une simple question d'usage, préfère les [Discussions](https://github.com/Doud75/Setly/discussions).
 

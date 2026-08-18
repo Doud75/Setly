@@ -1,0 +1,140 @@
+name: 🎨 Design / UI
+description: Signaler une incohérence visuelle ou proposer une évolution de l'interface
+title: "[Design] "
+labels: ["design", "frontend"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci pour ce retour sur l'interface !
+
+        Ce formulaire est fait pour tout ce qui touche au **visuel et à l'expérience** :
+        incohérence de style, écran mal adapté au mobile, composant à créer ou à harmoniser,
+        problème d'accessibilité, mode sombre…
+
+        Si le problème est un **dysfonctionnement** (l'application ne fait pas ce qu'elle
+        devrait), utilise plutôt le formulaire *Signaler un bug*.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Vérifications préalables
+      options:
+        - label: J'ai cherché dans les issues existantes et ce sujet n'a pas déjà été ouvert
+          required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type de demande
+      options:
+        - Incohérence visuelle (styles divergents d'un écran à l'autre)
+        - Amélioration d'ergonomie / parcours utilisateur
+        - Adaptation mobile / responsive
+        - Mode sombre
+        - Accessibilité (contraste, navigation clavier, lecteurs d'écran)
+        - Nouveau composant réutilisable
+        - Refonte d'un écran existant
+        - Autre
+    validations:
+      required: true
+
+  - type: dropdown
+    id: screen
+    attributes:
+      label: Écran concerné
+      description: Choisis le principal. Si plusieurs écrans sont touchés, détaille-le plus bas.
+      options:
+        - Transverse (plusieurs écrans)
+        - Connexion / Inscription
+        - Tableau de bord (choix du groupe)
+        - Liste des chansons
+        - Détail / création d'une chanson
+        - Liste des setlists
+        - Détail / création d'une setlist
+        - Interludes
+        - Paramètres (compte, membres)
+        - Invitation / rejoindre un groupe
+        - Mode hors-ligne
+        - Export PDF
+    validations:
+      required: true
+
+  - type: input
+    id: component
+    attributes:
+      label: Composant concerné
+      description: Si tu le sais, le composant de `frontend/src/lib/components/` en cause.
+      placeholder: "ui/Button.svelte, ui/Modal.svelte, setlist/…"
+
+  - type: textarea
+    id: current
+    attributes:
+      label: État actuel
+      description: Ce que l'interface fait ou affiche aujourd'hui, et en quoi c'est gênant.
+      placeholder: |
+        Les boutons d'action des setlists n'ont pas le même rayon ni la même hauteur
+        que ceux des chansons, ce qui donne une impression d'écrans différents.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposition
+      description: |
+        Ce que tu proposes à la place. Une description textuelle suffit ;
+        les maquettes se glissent dans le champ suivant.
+    validations:
+      required: true
+
+  - type: textarea
+    id: visuals
+    attributes:
+      label: Captures d'écran et maquettes
+      description: |
+        Glisse-dépose tes captures, maquettes ou liens Figma. Avant / après si tu en as.
+        C'est le champ le plus utile pour une issue de design.
+
+  - type: checkboxes
+    id: contexts
+    attributes:
+      label: Contextes à vérifier
+      description: Coche ceux où le sujet se pose, ça cadre la relecture de la PR.
+      options:
+        - label: Mobile (PWA installée)
+        - label: Mobile (navigateur)
+        - label: Desktop
+        - label: Thème clair
+        - label: Thème sombre
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Portée du changement
+      description: Un changement sur un composant partagé se répercute partout — utile à savoir avant de commencer.
+      options:
+        - Je ne sais pas
+        - Local à un écran
+        - Touche un composant partagé (`lib/components/ui/`)
+        - Touche les styles globaux (`app.css`, thème, couleurs)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Souhaites-tu l'implémenter toi-même ?
+      description: Aucune obligation — ouvrir l'issue est déjà une contribution.
+      options:
+        - Non, je propose simplement l'idée
+        - Oui, si la proposition est validée
+        - Oui, mais j'aurais besoin d'aide pour démarrer
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte supplémentaire
+      description: Références, exemples dans d'autres applications, contraintes à connaître…
