@@ -1,0 +1,1498 @@
+{
+  "info": {
+    "_postman_id": "5bdbbd3e-2fea-525d-a41a-a204a450c00c",
+    "name": "Setly — API",
+    "description": "Collection de l'API Go de Setly (`backend/main.go`).\n\n## Démarrage\n\n1. `make up` — l'API écoute sur `http://localhost:8089`.\n2. Renseigne les variables `username` et `password` de la collection : elles sont volontairement vides dans le fichier versionné, aucun identifiant ne doit être commité.\n3. Lance **Auth → Connexion**. Son script de test enregistre `token`, `refreshToken` et `bandId` dans les variables de la collection ; toutes les autres requêtes s'en servent.\n4. Sur une base vierge, lance **Auth → Inscription** à la place : elle crée le compte, son premier groupe, et remplit les mêmes variables.\n\n## Conventions\n\n- L'authentification `Bearer {{token}}` est définie au niveau de la collection et héritée par toutes les requêtes ; les routes publiques la désactivent individuellement.\n- Les routes liées à un groupe exigent l'en-tête **`X-Band-ID`** (`{{bandId}}`). Sans lui, l'API répond `400 En-tête X-Band-ID manquant.`\n- Les routes marquées **(admin)** exigent le rôle `admin` dans le groupe actif, sinon `403`.\n- Les scripts de test enregistrent les identifiants créés (`songId`, `setlistId`, `itemId`, `interludeId`, `inviteToken`), ce qui permet d'enchaîner les requêtes d'un dossier de haut en bas.\n\n## Attention\n\nCette collection attaque le backend **en direct** sur le port 8089. Le frontend, lui, passe par son proxy SvelteKit (`/api/*` sur le port 4000) qui injecte `Authorization` et `X-Band-ID` à partir des cookies — un comportement que Postman ne reproduit pas.\n\nLes erreurs suivent le format de `api/apierror` : `{ \"error\": { \"code\": \"...\", \"message\": \"...\" } }`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Inscription, connexion, rotation et révocation des tokens. Routes publiques.",
+      "item": [
+        {
+          "name": "Inscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "signup"
+              ]
+            },
+            "description": "Crée un compte **et** son premier groupe. Retourne `token`, `refresh_token` et la liste des groupes.\n\nRoute soumise au rate limiting (`RATE_LIMIT_ENABLED`).\n\nLe script de test enregistre le token et le `bandId` — c'est la requête à lancer en premier sur une base vierge.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Enregistre le token, le refresh token et le premier groupe dans les variables",
+                  "// de collection : toutes les autres requêtes s'en servent automatiquement.",
+                  "const res = pm.response.json();",
+                  "if (res.token) { pm.collectionVariables.set('token', res.token); }",
+                  "if (res.refresh_token) { pm.collectionVariables.set('refreshToken', res.refresh_token); }",
+                  "if (Array.isArray(res.bands) && res.bands.length > 0) {",
+                  "  const preferred = res.bands.find(b => b.id === res.default_band_id) || res.bands[0];",
+                  "  pm.collectionVariables.set('bandId', preferred.id);",
+                  "  console.log('Groupe actif :', preferred.name, '(role ' + preferred.role + ')');",
+                  "}",
+                  "pm.test('Authentification réussie', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Connexion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Point d'entrée habituel. Le script de test remplit `token`, `refreshToken` et `bandId` : lance cette requête avant toutes les autres.\n\nRoute soumise au rate limiting.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Enregistre le token, le refresh token et le premier groupe dans les variables",
+                  "// de collection : toutes les autres requêtes s'en servent automatiquement.",
+                  "const res = pm.response.json();",
+                  "if (res.token) { pm.collectionVariables.set('token', res.token); }",
+                  "if (res.refresh_token) { pm.collectionVariables.set('refreshToken', res.refresh_token); }",
+                  "if (Array.isArray(res.bands) && res.bands.length > 0) {",
+                  "  const preferred = res.bands.find(b => b.id === res.default_band_id) || res.bands[0];",
+                  "  pm.collectionVariables.set('bandId', preferred.id);",
+                  "  console.log('Groupe actif :', preferred.name, '(role ' + preferred.role + ')');",
+                  "}",
+                  "pm.test('Authentification réussie', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rafraîchir le token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Échange un `refresh_token` valide contre un nouveau couple de tokens. Le refresh token est à usage unique : la réponse en renvoie un nouveau.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) { pm.collectionVariables.set('token', res.token); }",
+                  "if (res.refresh_token) { pm.collectionVariables.set('refreshToken', res.refresh_token); }",
+                  "pm.test('Token rafraîchi', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Déconnexion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Révoque le refresh token côté serveur. Le header `Authorization` est nécessaire pour identifier le propriétaire du token à révoquer.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Utilisateur",
+      "description": "Compte de l'utilisateur connecté. Ces routes n'exigent pas `X-Band-ID`.",
+      "item": [
+        {
+          "name": "Mes informations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/user/info",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "user",
+                "info"
+              ]
+            },
+            "description": "Nom d'utilisateur, groupe actif et rôle. Réponse mise en cache dans Redis.\n\n`X-Band-ID` est optionnel ici mais détermine le groupe décrit dans la réponse."
+          },
+          "response": []
+        },
+        {
+          "name": "Mes groupes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/user/bands",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "user",
+                "bands"
+              ]
+            },
+            "description": "Tous les groupes de l'utilisateur avec son rôle (`admin` / `member`) et le groupe par défaut."
+          },
+          "response": []
+        },
+        {
+          "name": "Définir le groupe par défaut",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/user/default-band",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "user",
+                "default-band"
+              ]
+            },
+            "description": "Le groupe présélectionné à la connexion suivante.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"band_id\": \"{{bandId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Changer de mot de passe",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/user/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "user",
+                "password"
+              ]
+            },
+            "description": "Le mot de passe actuel est vérifié ; le nouveau ne peut pas être vide.\n\n⚠️ Si tu lances cette requête, pense à mettre à jour la variable `password`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"{{password}}\",\n  \"new_password\": \"nouveauMotDePasse123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Groupes",
+      "description": "Création de groupe et gestion des membres.",
+      "item": [
+        {
+          "name": "Créer un groupe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bands",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bands"
+              ]
+            },
+            "description": "Le créateur en devient automatiquement `admin`. Le script enregistre le nouvel id dans `bandId`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nouveau groupe\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.id) { pm.collectionVariables.set('bandId', res.id); }",
+                  "pm.test('Groupe créé', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lister les membres",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bands/{{bandId}}/members",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bands",
+                "{{bandId}}",
+                "members"
+              ]
+            },
+            "description": "Membres du groupe avec leur rôle. Le script enregistre le premier membre dans `memberId`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (Array.isArray(res) && res.length > 0) { pm.collectionVariables.set('memberId', res[0].id); }",
+                  "pm.test('Liste récupérée', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ajouter un membre (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bands/{{bandId}}/members",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bands",
+                "{{bandId}}",
+                "members"
+              ]
+            },
+            "description": "Crée le compte s'il n'existe pas encore, sinon rattache l'utilisateur existant au groupe.\n\n`password` n'est requis que pour un nouveau compte — remplace le placeholder par un mot de passe réel avant d'envoyer la requête, ne le commite pas.\n\n**Réservé aux admins du groupe.**",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"nouveauMembre\",\n  \"password\": \"REMPLACE_MOI\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Changer le rôle d'un membre (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bands/{{bandId}}/members/{{memberId}}/role",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bands",
+                "{{bandId}}",
+                "members",
+                "{{memberId}}",
+                "role"
+              ]
+            },
+            "description": "`role` vaut `admin` ou `member`.\n\n**Réservé aux admins du groupe.**",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Retirer un membre (admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bands/{{bandId}}/members/{{memberId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bands",
+                "{{bandId}}",
+                "members",
+                "{{memberId}}"
+              ]
+            },
+            "description": "Retire le membre du groupe (le compte utilisateur n'est pas supprimé).\n\n**Réservé aux admins du groupe.**"
+          },
+          "response": []
+        },
+        {
+          "name": "Quitter le groupe",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bands/{{bandId}}/members/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bands",
+                "{{bandId}}",
+                "members",
+                "me"
+              ]
+            },
+            "description": "L'utilisateur courant quitte le groupe indiqué dans l'URL."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Invitations",
+      "description": "Liens d'invitation à durée limitée pour rejoindre un groupe.",
+      "item": [
+        {
+          "name": "Créer une invitation (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bands/{{bandId}}/invitations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bands",
+                "{{bandId}}",
+                "invitations"
+              ]
+            },
+            "description": "Génère un lien d'invitation à durée limitée. `role` vaut `admin` ou `member`.\n\nLe script enregistre le token retourné dans `inviteToken`.\n\n**Réservé aux admins du groupe.**",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"member\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) { pm.collectionVariables.set('inviteToken', res.token); }",
+                  "pm.test('Invitation créée', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consulter une invitation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/invitations/{{inviteToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "invitations",
+                "{{inviteToken}}"
+              ]
+            },
+            "description": "Route **publique** : elle alimente la page d'accueil du lien d'invitation avant connexion. Retourne la validité, le nom du groupe et le rôle proposé.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Accepter une invitation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/invitations/{{inviteToken}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "invitations",
+                "{{inviteToken}}",
+                "accept"
+              ]
+            },
+            "description": "Rattache l'utilisateur **connecté** au groupe de l'invitation. Enregistre le groupe rejoint dans `bandId`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.band_id) { pm.collectionVariables.set('bandId', res.band_id); }",
+                  "pm.test('Invitation acceptée', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Chansons",
+      "description": "CRUD des chansons du groupe actif.",
+      "item": [
+        {
+          "name": "Créer une chanson",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/song",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "song"
+              ]
+            },
+            "description": "Seul `title` est obligatoire ; les autres champs acceptent `null`.\n\n`instrumentation` est un objet JSON libre.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Nouvelle chanson\",\n  \"duration_seconds\": 210,\n  \"tempo\": 120,\n  \"song_key\": \"Am\",\n  \"album_name\": \"Premier album\",\n  \"lyrics\": \"Couplet 1...\",\n  \"links\": \"https://open.spotify.com/track/...\",\n  \"instrumentation\": {\n    \"guitare\": \"Alice\",\n    \"batterie\": \"Bob\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.id) { pm.collectionVariables.set('songId', res.id); }",
+                  "pm.test('Chanson créée', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lister les chansons",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/song",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "song"
+              ]
+            },
+            "description": "Toutes les chansons non supprimées du groupe actif. Réponse mise en cache dans Redis."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (Array.isArray(res) && res.length > 0) { pm.collectionVariables.set('songId', res[0].id); }",
+                  "pm.test('Liste récupérée', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Détail d'une chanson",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/song/{{songId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "song",
+                "{{songId}}"
+              ]
+            },
+            "description": "404 si la chanson appartient à un autre groupe."
+          },
+          "response": []
+        },
+        {
+          "name": "Modifier une chanson",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/song/{{songId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "song",
+                "{{songId}}"
+              ]
+            },
+            "description": "Remplace l'ensemble des champs : renvoie l'objet complet, pas seulement les champs modifiés.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Chanson modifiée\",\n  \"duration_seconds\": 240,\n  \"tempo\": 128,\n  \"song_key\": \"C\",\n  \"album_name\": \"Premier album\",\n  \"lyrics\": null,\n  \"links\": null,\n  \"instrumentation\": {\n    \"guitare\": \"Alice\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Supprimer une chanson (admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/song/{{songId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "song",
+                "{{songId}}"
+              ]
+            },
+            "description": "Suppression logique (`soft delete`) : la chanson disparaît des listes mais les setlists qui la référencent restent cohérentes.\n\n**Réservé aux admins du groupe.**"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Setlists",
+      "description": "Setlists et leurs éléments (chansons et interludes ordonnés).",
+      "item": [
+        {
+          "name": "Créer une setlist",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/setlist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "setlist"
+              ]
+            },
+            "description": "`color` est une couleur hexadécimale (`#rrggbb`).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Concert du samedi\",\n  \"color\": \"#3b82f6\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.id) { pm.collectionVariables.set('setlistId', res.id); }",
+                  "pm.test('Setlist créée', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lister les setlists",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/setlist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "setlist"
+              ]
+            },
+            "description": "Setlists du groupe actif, archivées comprises. Réponse mise en cache dans Redis."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (Array.isArray(res) && res.length > 0) { pm.collectionVariables.set('setlistId', res[0].id); }",
+                  "pm.test('Liste récupérée', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Détail d'une setlist",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/setlist/{{setlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "setlist",
+                "{{setlistId}}"
+              ]
+            },
+            "description": "La setlist **et** ses éléments ordonnés (chansons et interludes résolus). Le script enregistre le premier élément dans `itemId`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const items = res.items || [];",
+                  "if (items.length > 0) { pm.collectionVariables.set('itemId', items[0].id); }",
+                  "pm.test('Détail récupéré', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Modifier une setlist",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/setlist/{{setlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "setlist",
+                "{{setlistId}}"
+              ]
+            },
+            "description": "Modification partielle : n'envoie que les champs à changer, les autres peuvent être omis ou laissés à `null`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Concert du samedi (v2)\",\n  \"color\": \"#ef4444\",\n  \"is_archived\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Dupliquer une setlist",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/setlist/{{setlistId}}/duplicate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "setlist",
+                "{{setlistId}}",
+                "duplicate"
+              ]
+            },
+            "description": "Copie la setlist avec tous ses éléments dans l'ordre. Le script bascule `setlistId` sur la copie.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Concert du samedi (copie)\",\n  \"color\": \"#22c55e\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.id) { pm.collectionVariables.set('setlistId', res.id); }",
+                  "pm.test('Setlist dupliquée', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Supprimer une setlist (admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/setlist/{{setlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "setlist",
+                "{{setlistId}}"
+              ]
+            },
+            "description": "**Réservé aux admins du groupe.**"
+          },
+          "response": []
+        },
+        {
+          "name": "Ajouter un élément",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/setlist/{{setlistId}}/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "setlist",
+                "{{setlistId}}",
+                "items"
+              ]
+            },
+            "description": "`item_type` vaut `song` ou `interlude`, `item_id` est l'id de la chanson ou de l'interlude. L'élément est ajouté en fin de setlist.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item_type\": \"song\",\n  \"item_id\": \"{{songId}}\",\n  \"notes\": \"Intro à la guitare seule\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.id) { pm.collectionVariables.set('itemId', res.id); }",
+                  "pm.test('Élément ajouté', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Réordonner les éléments",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/setlist/{{setlistId}}/items/order",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "setlist",
+                "{{setlistId}}",
+                "items",
+                "order"
+              ]
+            },
+            "description": "`item_ids` est la liste **complète** des ids d'éléments, dans le nouvel ordre. Écrit en transaction : la réécriture des positions est atomique.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item_ids\": [\n    \"{{itemId}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Modifier les notes d'un élément",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/setlist/item/{{itemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "setlist",
+                "item",
+                "{{itemId}}"
+              ]
+            },
+            "description": "Seules les notes d'un élément sont modifiables.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Passer directement au refrain\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Supprimer un élément (admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/setlist/item/{{itemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "setlist",
+                "item",
+                "{{itemId}}"
+              ]
+            },
+            "description": "**Réservé aux admins du groupe.**"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Interludes",
+      "description": "Temps de parole et transitions insérables dans une setlist.",
+      "item": [
+        {
+          "name": "Créer un interlude",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/interlude",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "interlude"
+              ]
+            },
+            "description": "Un interlude est un temps de parole ou de transition entre deux morceaux. Seul `title` est obligatoire.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Présentation du groupe\",\n  \"speaker\": \"Alice\",\n  \"script\": \"Merci d'être venus ce soir…\",\n  \"duration_seconds\": 90\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.id) { pm.collectionVariables.set('interludeId', res.id); }",
+                  "pm.test('Interlude créé', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lister les interludes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/interlude",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "interlude"
+              ]
+            },
+            "description": "Interludes du groupe actif."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (Array.isArray(res) && res.length > 0) { pm.collectionVariables.set('interludeId', res[0].id); }",
+                  "pm.test('Liste récupérée', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Modifier un interlude",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Band-ID",
+                "value": "{{bandId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/interlude/{{interludeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "interlude",
+                "{{interludeId}}"
+              ]
+            },
+            "description": "Remplace l'ensemble des champs.\n\nIl n'existe pas de route de suppression d'interlude côté API.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Présentation du groupe (v2)\",\n  \"speaker\": \"Bob\",\n  \"script\": null,\n  \"duration_seconds\": 60\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Système",
+      "description": "Supervision.",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            },
+            "description": "Route publique de supervision, utilisée par le healthcheck Docker. Retourne `{\"status\": \"ok\"}`.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('API en vie', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8089",
+      "type": "string"
+    },
+    {
+      "key": "username",
+      "value": "testuser",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "bandId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "memberId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "songId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "setlistId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "itemId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "interludeId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "inviteToken",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

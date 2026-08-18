@@ -197,6 +197,7 @@ go vet ./...
 - Les erreurs métier sont des `apierror.AppError` typées (avec `Code`, `HTTPStatus`, `IsUserError`).
 - La logique métier vit dans `api/service/`, l'accès aux données dans `api/repository/`. Les services dépendent d'interfaces de repository, ce qui permet de les tester avec les mocks de `api/repository/mocks/`.
 - Le frontend utilise **Svelte 5 avec les runes** (`$state`, `$derived`, `$effect`), pas l'API réactive de Svelte 4.
+- Toute route ajoutée, modifiée ou supprimée dans `backend/main.go` se répercute dans la collection Postman [`backend/postman/setly.postman_collection.json`](backend/postman/README.md) — c'est la référence des endpoints pour qui attaque l'API sans passer par le frontend.
 
 Pour une vue d'ensemble de l'architecture, lis [ARCHITECTURE.md](ARCHITECTURE.md).
 

@@ -60,6 +60,11 @@ postgres-data/
 
 repomix-output.xml
 
+# Environnements Postman exportés : ils peuvent contenir un JWT ou un mot de passe
+# réels. La collection versionnée (backend/postman/) porte déjà les variables,
+# avec des valeurs vides — aucun fichier d'environnement n'est nécessaire.
+*.postman_environment.json
+
 frontend/playwright-report
 frontend/test-results
 test-results

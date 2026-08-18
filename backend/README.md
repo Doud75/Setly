@@ -75,30 +75,30 @@ L'API sera accessible à l'adresse `http://localhost:8089`.
 
 ## Endpoints de l'API
 
-### Authentification
+L'API expose 36 routes, toutes préfixées par `/api/`. La référence à jour, avec les payloads
+et les en-têtes attendus, est la **collection Postman** du dépôt :
 
-- `POST /api/auth/signup` : Crée un nouveau groupe (band) et son premier utilisateur.
-  ```json
-  {
-    "band_name": "Mon Super Groupe",
-    "username": "mon_user",
-    "password": "mon_password"
-  }
-  ```
+- [`backend/postman/setly.postman_collection.json`](postman/setly.postman_collection.json) — à importer dans Postman
+- [`backend/postman/README.md`](postman/README.md) — comment s'en servir
 
-- `POST /api/auth/join` : Crée un nouvel utilisateur et le rattache à un groupe existant.
-  ```json
-  {
-    "band_name": "Mon Super Groupe",
-    "username": "autre_user",
-    "password": "autre_password"
-  }
-  ```
+En deux mots :
 
-- `POST /api/auth/login` : Connecte un utilisateur et retourne un token JWT.
-  ```json
-  {
-    "username": "mon_user",
-    "password": "mon_password"
-  }
-  ```
+| Domaine | Routes | Auth |
+| --- | --- | --- |
+| Auth | `POST /api/auth/{signup,login,refresh,logout}` | publique |
+| Utilisateur | `GET /api/user/{info,bands}`, `PUT /api/user/{password,default-band}` | JWT seul |
+| Groupes | `POST /api/bands`, `GET` et `POST /api/bands/{bandId}/members`, `PUT .../role`, `DELETE .../{userId}`, `DELETE .../me` | JWT + `X-Band-ID` |
+| Invitations | `POST /api/bands/{bandId}/invitations`, `GET /api/invitations/{token}`, `POST .../accept` | mixte |
+| Chansons | `GET` et `POST /api/song`, `GET`, `PUT`, `DELETE /api/song/{id}` | JWT + `X-Band-ID` |
+| Setlists | `GET` et `POST /api/setlist`, `GET`, `PUT`, `DELETE /api/setlist/{id}`, `POST .../duplicate`, `POST .../items`, `PUT .../items/order`, `PUT`, `DELETE /api/setlist/item/{itemId}` | JWT + `X-Band-ID` |
+| Interludes | `GET` et `POST /api/interlude`, `PUT /api/interlude/{id}` | JWT + `X-Band-ID` |
+| Système | `GET /api/health` | publique |
+
+Deux règles transverses :
+
+- Les routes du groupe actif exigent l'en-tête **`X-Band-ID`** en plus du `Authorization: Bearer <jwt>` ;
+  sans lui l'API répond `400 En-tête X-Band-ID manquant.`
+- Les suppressions et la gestion des membres passent par `middleware.AdminOnly` : `403` pour un simple membre.
+
+Les erreurs suivent toutes le format de `api/apierror` :
+`{ "error": { "code": "...", "message": "..." } }`.
