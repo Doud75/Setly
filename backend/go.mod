@@ -1,6 +1,6 @@
 module setlist
 
-go 1.25.12
+go 1.26.11
 
 require (
 	github.com/alicebob/miniredis/v2 v2.38.0
@@ -8,7 +8,7 @@ require (
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/redis/go-redis/v9 v9.18.0
 	go.uber.org/mock v0.6.0
-	golang.org/x/crypto v0.52.0
+	golang.org/x/crypto v0.55.0
 )
 
 require (
@@ -19,6 +19,6 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	golang.org/x/sync v0.21.0 // indirect
-	golang.org/x/text v0.39.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
 )

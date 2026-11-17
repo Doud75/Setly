@@ -54,6 +54,6 @@
 	},
 	"overrides": {
 		"@exodus/bytes": ">=1.6.0 <1.12.0",
-		"devalue": ">=5.8.1"
+		"devalue": "^5.9.4"
 	}
 }
