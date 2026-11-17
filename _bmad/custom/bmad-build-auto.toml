@@ -1,0 +1,16 @@
+# Setly overrides for bmad-build-auto (committed, never touched by the installer).
+# Lists append to the defaults; strings replace them.
+
+[workflow]
+
+persistent_facts = [
+  "file:CLAUDE.md",
+  "file:ARCHITECTURE.md",
+  "Monorepo: Go REST API in backend/ (net/http, pgx/v5, layered handler -> service -> repository, typed errors in api/apierror), SvelteKit + Svelte 5 runes + Tailwind in frontend/. The browser never calls the Go API directly: everything goes through src/routes/api/[...slug]/+server.ts.",
+  "Verification commands you may put in a spec's ## Verification section and run: `make test-backend`, `make test-unit`, `cd backend && go build ./... && go vet ./...`, `cd frontend && npm run lint && npm run check && npm run build`. NEVER run E2E (`make test`, other `make test-*` targets, `npx playwright`): CI runs them. You may still write or update Playwright specs under frontend/tests/ when the change needs them.",
+  "Backend services depend on repository interfaces; add or update mocks in backend/api/repository/mocks/ and unit tests next to the service. Schema changes need a new migration pair in backend/db/migrations/ (up + down) and seed updates in backend/db/seed/ when relevant.",
+  "Frontend: reuse components in src/lib/components/{setlist,song,ui}/ before creating new ones; shared types live in src/lib/types.ts. Run `npm run format` on touched frontend files.",
+  "User-facing changes add a line under `## [Non publié]` in CHANGELOG.md, in French, matching the existing style.",
+  "Commit messages follow the repo style `<type> : <description>` (types: feat, fix, docs, refactor, test, chore), in French, ending with the line `Co-Authored-By: Claude <noreply@anthropic.com>`.",
+  "Git: commit only on the current agent branch (feat|fix|docs|refactor/gh-<N>-<slug>). Never push, never touch main — the caller pushes and opens the PR.",
+]
