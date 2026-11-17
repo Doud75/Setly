@@ -76,3 +76,14 @@ k6/*
 **/scripts/*
 # Le script de release fait partie du dépôt : il est appelé par make release-*
 !/scripts/release.sh
+
+### BMAD / Claude Code ####################################
+# Les scripts de BMAD doivent être versionnés malgré la règle **/scripts/* ci-dessus.
+!/_bmad/scripts/*
+!/.claude/skills/*/scripts/*
+# Rendus générés à l'exécution des skills BMAD (cache local).
+_bmad/render/
+# Réponses d'installation personnelles de BMAD (nom, langue).
+_bmad/**/*.user.toml
+# Réglages Claude Code personnels.
+.claude/settings.local.json
