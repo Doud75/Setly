@@ -12,6 +12,23 @@ Les catégories utilisées sont : `Ajouté`, `Modifié`, `Déprécié`, `Retiré
 
 ## [Non publié]
 
+### Ajouté
+
+- Framework [BMAD](https://github.com/bmad-code-org/BMAD-METHOD) (module `bmm`) pour l'assistance au
+  développement par agents IA, et un workflow qui transforme une issue étiquetée `agent-ready` en Pull
+  Request relue par un humain avant tout merge.
+
+### Modifié
+
+- Le backend passe à Go 1.26.11 (Go 1.25 n'est plus maintenu) : `go.mod`, image Docker et CI.
+- La CI épingle la version de `govulncheck` et exécute les tests E2E sur `ubuntu-24.04`, Playwright ne
+  prenant pas encore en charge Ubuntu 26.04.
+
+### Sécurité
+
+- Mise à jour de `golang.org/x/crypto` (0.55.0), `golang.org/x/text` (0.41.0), `devalue` (5.9.4) et
+  `dompurify` (3.4.18) pour corriger des vulnérabilités signalées par govulncheck et Trivy.
+
 ## [0.2.0] - 2026-08-07
 
 ### Ajouté
