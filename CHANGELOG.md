@@ -12,6 +12,8 @@ Les catégories utilisées sont : `Ajouté`, `Modifié`, `Déprécié`, `Retiré
 
 ## [Non publié]
 
+## [0.3.0] - 2026-11-17
+
 ### Ajouté
 
 - Framework [BMAD](https://github.com/bmad-code-org/BMAD-METHOD) (module `bmm`) pour l'assistance au
@@ -85,6 +87,7 @@ Première release publique, à l'ouverture du projet en open source.
   au même moment obtenaient la même position, la seconde insertion violait la contrainte
   `unique_position_in_setlist` et l'utilisateur recevait une erreur 500 ([#80](https://github.com/Doud75/Setly/issues/80)).
 
-[Non publié]: https://github.com/Doud75/Setly/compare/v0.2.0...HEAD
+[Non publié]: https://github.com/Doud75/Setly/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Doud75/Setly/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Doud75/Setly/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Doud75/Setly/releases/tag/v0.1.0
