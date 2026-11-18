@@ -10,12 +10,12 @@ Runs **unattended**: never ask the user a question, never wait for approval. Whe
 
 Rules from `CLAUDE.md` apply in full: work only on your own `feat|fix|docs|refactor/gh-<N>-<slug>` branch, never commit or push to `main`, never merge, never release, never run E2E.
 
-Labels: `agent-ready` (queued by the user) → `agent-wip` (taken) → `agent-pr` (PR open) or `agent-blocked` (needs the user).
+Labels: `agent-ready` (queued by the user) → `agent-wip` (taken) → `agent-pr` (PR open) or `agent-blocked` (needs the user). `priority` (set by the user) puts an `agent-ready` issue ahead of the queue; the agent never adds or removes it.
 
 ## 1. Pick the issue
 
 - Argument given → use that issue number. Refuse (stop with a one-line message, no label change) if it is closed, or already labelled `agent-wip` / `agent-pr`.
-- No argument → `gh issue list --state open --label agent-ready --search "-label:agent-wip -label:agent-pr -label:agent-blocked" --json number,title,labels,createdAt --limit 50`, take the **oldest** one. None → say "Aucune issue agent-ready." and stop (nothing else).
+- No argument → `gh issue list --state open --label agent-ready --search "-label:agent-wip -label:agent-pr -label:agent-blocked" --json number,title,labels,createdAt --limit 50`. Among them, take the **oldest one labelled `priority`**; if none is labelled `priority`, take the **oldest** one. None at all → say "Aucune issue agent-ready." and stop (nothing else).
 - Read it fully: `gh issue view <N> --json number,title,body,labels,comments`. Also read any issue it references as a dependency ("dépend de #X", "après #X", "bloqué par #X"): if such a dependency is still open and not merged, go to step 7 with reason `dépend de #X, encore ouverte`.
 - Skip-and-block (step 7) an issue whose body asks for a product or design decision that is not made in the issue or its comments (e.g. "à définir", "à discuter", missing mockup for a `[Design]` issue that requires one). Implementation choices are yours; product choices are not.
 
